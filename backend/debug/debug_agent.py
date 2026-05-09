@@ -1,118 +1,117 @@
 #!/usr/bin/env python
 """
-Lightweight debug runner for the DeerFlow lead agent.
+Debug script for lead_agent.
+Run this file directly in VS Code with breakpoints.
 
-需求：
-1. 每次请求后，按顺序打印 Human / AI / Tool 等 message
-2. 用户再次输入时，自动带上历史对话上下文
+Requirements:
+    Run with `uv run` from the backend/ directory so that the uv workspace
+    resolves deerflow-harness and app packages correctly:
+
+        cd backend && PYTHONPATH=. uv run python debug.py
+
+Usage:
+    1. Set breakpoints in agent.py or other files
+    2. Press F5 or use "Run and Debug" panel
+    3. Input messages in the terminal to interact with the agent
 """
 
 import asyncio
 import logging
-import os
-import sys
 
 from dotenv import load_dotenv
 
 try:
     from prompt_toolkit import PromptSession
     from prompt_toolkit.history import InMemoryHistory
+
     _HAS_PROMPT_TOOLKIT = True
-except Exception:
+except ImportError:
     _HAS_PROMPT_TOOLKIT = False
 
 load_dotenv()
-
-DEFAULT_CONFIG_PATH = "/data2/deer-flow/config.yaml"
 
 _LOG_FMT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 _LOG_DATEFMT = "%Y-%m-%d %H:%M:%S"
 
 
-def _setup_logging(level_name: str) -> None:
-    try:
-        mapping = logging.getLevelNamesMapping()
-        lvl = (level_name or "INFO").strip().upper()
-        level = mapping.get(lvl, logging.INFO)
-    except Exception:
-        level = logging.INFO
+def _setup_logging(log_level: int = logging.INFO) -> None:
+    """Route logs to ``debug.log`` using *log_level* for the initial root/file setup.
 
+    This configures the root logger and the ``debug.log`` file handler so logs do
+    not print on the interactive console. It is idempotent: any pre-existing
+    handlers on the root logger (e.g. installed by ``logging.basicConfig`` in
+    transitively imported modules) are removed so the debug session output only
+    lands in ``debug.log``.
+
+    Note: later config-driven logging adjustments may change named logger
+    verbosity without raising the root logger or file-handler thresholds set
+    here, so the eventual contents of ``debug.log`` may not be filtered solely by
+    this function's ``log_level`` argument.
+    """
     root = logging.root
     for h in list(root.handlers):
         root.removeHandler(h)
         h.close()
+    root.setLevel(log_level)
 
-    root.setLevel(level)
-
-    file_handler = logging.FileHandler(
-        "debug_agent.log", mode="a", encoding="utf-8"
-    )
-    file_handler.setLevel(level)
-    file_handler.setFormatter(
-        logging.Formatter(_LOG_FMT, datefmt=_LOG_DATEFMT)
-    )
+    file_handler = logging.FileHandler("debug.log", mode="a", encoding="utf-8")
+    file_handler.setLevel(log_level)
+    file_handler.setFormatter(logging.Formatter(_LOG_FMT, datefmt=_LOG_DATEFMT))
     root.addHandler(file_handler)
 
 
-
-
 async def main():
-    config_path = os.environ.get(
-        "DEER_FLOW_CONFIG_PATH",
-        DEFAULT_CONFIG_PATH
-    )
-    os.environ["DEER_FLOW_CONFIG_PATH"] = config_path
+    # Install file logging first so warnings emitted while loading config do not
+    # leak onto the interactive terminal via Python's lastResort handler.
+    _setup_logging()
 
-    _setup_logging("INFO")
+    from deerflow.config import get_app_config
+    from deerflow.config.app_config import apply_logging_level
 
+    app_config = get_app_config()
+    apply_logging_level(app_config.log_level)
+
+    # Delay the rest of the deerflow imports until *after* logging is installed
+    # so that any import-time side effects (e.g. deerflow.agents starts a
+    # background skill-loader thread on import) emit logs to debug.log instead
+    # of leaking onto the interactive terminal via Python's lastResort handler.
     from langchain_core.messages import HumanMessage
     from langgraph.runtime import Runtime
 
     from deerflow.agents import make_lead_agent
     from deerflow.mcp import initialize_mcp_tools
-    from deerflow.config import get_app_config
 
+    # Initialize MCP tools at startup
     try:
         await initialize_mcp_tools()
     except Exception as e:
         print(f"Warning: Failed to initialize MCP tools: {e}")
 
-    app_config = get_app_config()
-    # print((f"Loaded app config: {app_config}"))
-    thread_id = os.environ.get("THREAD_ID", "debug-thread-004")
-    model_name = os.environ.get("MODEL_NAME")
-
+    # Create agent with default config
     config = {
         "configurable": {
-            "thread_id": thread_id,
+            "thread_id": "debug-thread-005",
             "thinking_enabled": True,
             "is_plan_mode": True,
-            "subagent_enabled": False
+            "subagent_enabled": True,
+            # Uncomment to use a specific model
+            "model_name": "Qwen3.6-27B",
         }
     }
 
-    if model_name:
-        config["configurable"]["model_name"] = model_name
-
-    # Include `user_id` in runtime context so downstream components (e.g.
-    # middlewares, paths resolution) can pick it up from the runtime as well.
-    runtime_ctx = {"thread_id": thread_id}
-
-
-    runtime = Runtime(context=runtime_ctx)
+    runtime = Runtime(context={"thread_id": config["configurable"]["thread_id"]})
     config["configurable"]["__pregel_runtime"] = runtime
-
-    # print(f"Using config: {config}")
 
     agent = make_lead_agent(config)
 
-    session = PromptSession(
-        history=InMemoryHistory()
-    ) if _HAS_PROMPT_TOOLKIT else None
+    session = PromptSession(history=InMemoryHistory()) if _HAS_PROMPT_TOOLKIT else None
 
     print("=" * 50)
-    print("Lead Agent Debug Agent")
-    print("Type quit / exit to stop")
+    print("Lead Agent Debug Mode")
+    print("Type 'quit' or 'exit' to stop")
+    print(f"Logs: debug.log (log_level={app_config.log_level})")
+    if not _HAS_PROMPT_TOOLKIT:
+        print("Tip: `uv sync --group dev` to enable arrow-key & history support")
     print("=" * 50)
 
     # ⭐ 保存历史消息
@@ -124,44 +123,30 @@ async def main():
                 user_input = (await session.prompt_async("\nYou: ")).strip()
             else:
                 user_input = input("\nYou: ").strip()
-
             if not user_input:
                 continue
-
             if user_input.lower() in ("quit", "exit"):
                 print("Goodbye!")
                 break
 
             # 当前用户输入
             human_msg = HumanMessage(content=user_input)
-
             # 加入历史
             history_messages.append(human_msg)
-
             # 把完整历史传进去
-            state = {
-                "messages": history_messages
-            }
-
-            print("\n开始执行...\n")
+            state = {"messages": history_messages}
 
             msgs = None
-            async for chunk in agent.astream(state,stream_mode="values",config=config):
+            async for chunk in agent.astream(state, stream_mode="values", config=config):
                 if "messages" not in chunk:
                     continue
-
                 msgs = chunk["messages"]
                 msgs[-1].pretty_print()
-                # while seen < len(msgs):
-                #     pretty_message(msgs[seen])
-                #     seen += 1
-
             history_messages = msgs
             # print(history_messages)
         except (KeyboardInterrupt, EOFError):
             print("\nGoodbye!")
             break
-
         except Exception as e:
             print(f"\nError: {e}")
             import traceback
@@ -169,12 +154,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    workspace_root = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "..")
-    )
-    if workspace_root not in sys.path:
-        sys.path.insert(0, workspace_root)
-
     asyncio.run(main())
-
-
