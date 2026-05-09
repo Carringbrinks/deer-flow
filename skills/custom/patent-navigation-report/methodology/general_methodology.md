@@ -440,9 +440,9 @@
 |------|------|
 | 最终交付格式 | Markdown文件 + Word文件 |
 | 文档结构 | 摘要 → 正文（各章节）→ 参考文献 |
-| 图表嵌入语法 | `![图X-X 标题](outputs/assets/charts/fig_X_X_name.png)` |
-| 图表存储路径 | `outputs/assets/charts/` |
-| 数据文件存储路径 | `outputs/assets/data/`（CSV或JSON格式） |
+| 图表嵌入语法 | `![图X-X 标题](/mnt/user-data/outputs/assets/charts/fig_X_X_name.png)` |
+| 图表存储路径 | `/mnt/user-data/outputs/assets/charts/` |
+| 数据文件存储路径 | `/mnt/user-data/outputs/assets/data/`（CSV或JSON格式） |
 
 ### 8.3 参考文献规范
 

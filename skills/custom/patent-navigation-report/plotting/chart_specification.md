@@ -291,7 +291,7 @@
 
 生成图表时同步保存两类文件：
 
-**图表图片文件：`outputs/assets/charts/`**
+**图表图片文件：`/mnt/user-data/`**
 ```
 outputs/assets/charts/
 ├── fig_1_1_title.png
@@ -302,7 +302,7 @@ outputs/assets/charts/
 └── ...
 ```
 
-**绘图数据文件：`outputs/assets/data/`**
+**绘图数据文件：`/mnt/user-data/`**
 ```
 outputs/assets/data/
 ├── data_1_1_title.csv          ← CSV格式（表格数据）

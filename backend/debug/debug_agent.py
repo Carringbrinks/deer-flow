@@ -23,9 +23,7 @@ except Exception:
 
 load_dotenv()
 
-DEFAULT_CONFIG_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "config.yaml")
-)
+DEFAULT_CONFIG_PATH = "/data2/deer-flow/config.yaml"
 
 _LOG_FMT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 _LOG_DATEFMT = "%Y-%m-%d %H:%M:%S"
@@ -80,7 +78,7 @@ async def main():
         print(f"Warning: Failed to initialize MCP tools: {e}")
 
     app_config = get_app_config()
-    print((f"Loaded app config: {app_config}"))
+    # print((f"Loaded app config: {app_config}"))
     thread_id = os.environ.get("THREAD_ID", "debug-thread-004")
     model_name = os.environ.get("MODEL_NAME")
 
@@ -104,7 +102,7 @@ async def main():
     runtime = Runtime(context=runtime_ctx)
     config["configurable"]["__pregel_runtime"] = runtime
 
-    print(f"Using config: {config}")
+    # print(f"Using config: {config}")
 
     agent = make_lead_agent(config)
 

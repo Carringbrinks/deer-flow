@@ -42,7 +42,7 @@ patent-navigation-report/
 3.  **加载领域方法论** — 阅读 `domain_knowledge/{domain}/methodology.md` 获取领域专属的产业链分解与分析框架。
 4.  **加载领域大纲** — 阅读 `domain_knowledge/{domain}/report_outline.md` 获取定制化的章节与重点内容布局。
 5.  **按需加载**：
-    *   `template/report_template.md` — 通用模板，在没有特定领域大纲时作为后备框架。
+    *   `template/report_template.md` — 通用模板，在没有特定领域大纲或者领域大纲文件为空时作为后备框架。
     *   `methodology/general_methodology.md` — 通用方法论，用于补充领域专属方法论中未尽的通用分析范式。
     *   `writing_style/guidelines.md` — 遵循决策支持导向的写作规范与表达要求。
     *   `plotting/chart_specification.md` — 标准化图表绘制与配色方案。
@@ -121,7 +121,7 @@ domain_knowledge/{domain_name}/report_outline.md
 
 ### 2.1 创建输出目录结构
 
-首先在 `outputs/` 下创建以下目录结构：
+首先在 `/mnt/user-data/` 下创建以下目录结构：
 
 ```
 outputs/
@@ -139,20 +139,20 @@ outputs/
 
 #### **步骤 A：生成本章正文内容**
 *   **指令下达**：仅向大模型发送本章的生成指令。
-*   **图表占位**：在正文中需要插入图表的位置，直接生成标准化的 Markdown 图片语法。路径必须指向(相对路径) `outputs/assets/charts/`，命名必须规范。
-    *   *示例：`![图3-1 全球碳纤维专利申请量趋势](outputs/assets/charts/fig_3_1_patent_trend.png)`*
+*   **图表占位**：在正文中需要插入图表的位置，直接生成标准化的 Markdown 图片语法。路径必须指向(绝对路径) `/mnt/user-data/outputs/assets/charts/`，命名必须规范。
+    *   *示例：`![图3-1 全球碳纤维专利申请量趋势](/mnt/user-data/outputs/assets/charts/fig_3_1_patent_trend.png)`*
 *   **文献内联**：引用文献时直接在正文中打上标记 `[citation:文献名称](URL)`。
-*   **保存文件**：将生成的正文单独保存，例如 `outputs/parts/part_01_chapter01.md`。
+*   **保存文件**：将生成的正文单独保存，例如 `/mnt/user-data/outputs/parts/part_01_chapter01.md`。
 
 #### **步骤 B：生成本章配套图表（正文完成后立即执行）**
 *   **占位符提取**：扫描刚刚生成的正文 Markdown 文件，提取所有 `![图X-X...](...)` 占位符。
-*   **数据准备**：准备这些图表所需的绘图原始数据，保存为 `outputs/assets/data/data_X_X_name.csv`。
-*   **图表生成**：调用图表生成工具，生成对应的图片文件，并严格按照正文中占位符的路径和文件名保存至 `outputs/assets/charts/fig_X_X_name.png`。
+*   **数据准备**：准备这些图表所需的绘图原始数据，保存为 `/mnt/user-data/outputs/assets/data/data_X_X_name.csv`。
+*   **图表生成**：调用图表生成工具，生成对应的图片文件，并严格按照正文中占位符的路径和文件名保存至 `/mnt/user-data/outputs/assets/charts/fig_X_X_name.png`。
 
 #### **步骤 C：提取并保存本章参考文献**
 *   **标记扫描**：扫描刚刚生成的正文 Markdown 文件，提取所有 `[citation:文献名称](URL)` 标记， 没有引用链接的可以不放置URL。
 *   **格式整理**：将这些引用整理成带编号的 Markdown 列表格式（例如：`1. [文献名称](URL)`）。
-*   **独立保存**：将该列表保存为独立的参考文献文件，命名与章节对应，例如 `outputs/parts/part_01_chapter01_refs.md`。
+*   **独立保存**：将该列表保存为独立的参考文献文件，命名与章节对应，例如 `/mnt/user-data/outputs/parts/part_01_chapter01_refs.md`。
 
 #### **步骤 D：生成并保存本章摘要**
 
@@ -164,7 +164,7 @@ outputs/
     * 风格：客观、信息密度高、避免冗余
     * 禁止：不得包含图片语法或 `[citation:...]` 标记
     * 严禁凭空编造摘要数据，必须与正文内容完全锚定。
-*   **保存路径**：将生成的摘要保存为 `outputs/parts/part_XX_chapterXX_abstract.md`。
+*   **保存路径**：将生成的摘要保存为 `/mnt/user-data/outputs/parts/part_XX_chapterXX_abstract.md`。
 
 #### 2.3 逐章生成正文（第1章至最后章）
 
@@ -174,10 +174,12 @@ outputs/
 
 通用生成要求：
 - 每章正文不少于10,000字，核心分析章建议15,000-20,000字
-- 各章独立保存为 `outputs/parts/part_XX_chapterXX.md`
+- 各章独立保存为 `/mnt/user-data/outputs/parts/part_XX_chapterXX.md`
 
 
 ### 第3步：整合输出
+
+在`/mnt/user-data`工作目录下操作：
 
 合并阶段必须读取并严格执行 `merge_md/merge_protocol.md`。
 
@@ -273,7 +275,7 @@ outputs/
 - `outputs/merged/` 必须包含且只包含合并中间产物：`abstracts.md`、`body.md`、`references.md`。
 - `outputs/final/` 必须包含最终交付文件：`report.md`、`report.docx`。
 - `outputs/final/report.md` 必须按“摘要 → 正文 → 参考文献”的顺序组织，且不得包含临时说明、检查记录或过程性文本。
-- 所有路径必须统一使用 `outputs/`；正文中的图表链接必须指向 `outputs/assets/charts/`。
+- 所有路径必须统一使用 `outputs/`；正文中的图表链接必须指向 `/mnt/user-data/outputs/assets/charts/`。
 
 ### 评估结果输出
 

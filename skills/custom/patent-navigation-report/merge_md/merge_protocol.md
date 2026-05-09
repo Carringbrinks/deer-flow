@@ -12,7 +12,7 @@
 合并阶段必须使用以下输出范式：
 
 ```
-outputs/
+/mnt/user-data/outputs/
 ├── parts/                      ← 存放所有中间过程文件（逐章生成产物）
 │   ├── part_01_chapter01.md
 │   ├── part_01_chapter01_refs.md
@@ -127,23 +127,24 @@ outputs/
 
 `outputs/final/report.md` 必须仅由摘要、正文、参考文献三部分组成，不得混入章节草稿、临时说明、评估记录或其他过程性文本。
 
+根据您的逻辑，以下是完善后的 Word 转换说明：
+
 ## Word 转换
 
 ### 转换命令
 
-**重要前提**：`report.md` 中的图片路径均以 `outputs/assets/...` 开头，为确保 Pandoc 能正确解析图片路径，必须在 `outputs` 文件夹的**父目录**（项目根目录）执行转换命令。
+**重要前提**：`report.md` 中的图片路径已全部转换为绝对路径，可直接在文件所在目录执行转换命令。
 
 ```bash
-# 进入 outputs 的父目录（项目根目录）
-cd /path/to/your/project
+# 进入 report.md 所在目录
+cd /path/to/your/project/outputs/final
 
 # 执行转换
-pandoc outputs/final/report.md \
-  -o outputs/final/report.docx \
+pandoc report.md \
+  -o report.docx \
   --toc \
   --toc-depth=3 \
   --number-sections \
-  --resource-path=. \
   -V lang=zh-CN
 ```
 
@@ -151,21 +152,37 @@ pandoc outputs/final/report.md \
 
 | 参数 | 作用 |
 |------|------|
-| `cd /path/to/your/project` | 切换到 `outputs` 文件夹的父目录 |
-| `pandoc outputs/final/report.md` | 指定输入的 Markdown 文件 |
-| `-o outputs/final/report.docx` | 指定输出的 Word 文件 |
+| `cd /path/to/your/project/outputs/final` | 切换到 `report.md` 文件所在目录 |
+| `pandoc report.md` | 指定输入的 Markdown 文件 |
+| `-o report.docx` | 指定输出的 Word 文件 |
 | `--toc` | 生成目录 |
 | `--toc-depth=3` | 目录显示到三级标题 |
 | `--number-sections` | 自动为章节标题编号 |
-| `--resource-path=.` | 从当前目录（项目根目录）查找图片资源 |
-| `-V lang=zh-CN` | 设置中文环境 |
+| `-V lang=zh-CN` | 设置中文环境，自动将目录标题转为“目录” |
 
 ### 路径解析原理
 
-由于命令在项目根目录执行，且设置了 `--resource-path=.`，Pandoc 会将图片路径 `outputs/assets/charts/fig_1_1_xxx.png` 正确解析为：
-- `./outputs/assets/charts/fig_1_1_xxx.png`（从项目根目录开始的完整路径）
+由于 `report.md` 中的图片路径已全部保存为绝对路径（例如 `/mnt/user-data/outputs/assets/charts/fig_1_1_xxx.png`），Pandoc 会直接从绝对路径读取图片，无需额外的 `--resource-path` 参数指定资源搜索路径。
 
+### 图片显示异常排查
 
+如果格式转换过程中找不到对应的图片路径，请按以下步骤排查：
+
+1. **确认图片是否存在**：根据系统报错提示的路径，检查 `/mnt/user-data/outputs/assets/charts/` 目录中是否存在对应的图片文件。
+
+2. **验证绝对路径正确性**：确认 `report.md` 中的图片绝对路径与实际文件存放路径完全一致，包括：
+   - 盘符/挂载点（如 `/mnt/user-data/`）
+   - 目录层级（`outputs/assets/charts/`）
+   - 文件名及扩展名（`.png` / `.svg`）
+
+3. **检查路径格式**：确保路径中使用正斜杠 `/`（Linux/macOS）或双反斜杠 `\\`（Windows），避免混用导致解析错误。
+
+4. **重新转换并观察报错**：修正路径后重新执行转换命令，根据新的报错信息继续定位问题。
+
+```bash
+# 示例：检查图片是否存在
+ls -la /mnt/user-data/outputs/assets/charts/fig_1_1_*.png
+```
 
 ## 强约束规则
 
@@ -174,5 +191,3 @@ pandoc outputs/final/report.md \
 - 正文必须按章节顺序完整拼接。
 - 参考文献必须去重并统一编号。
 - `outputs/final/report.md` 必须由 `outputs/final/abstract.md`、`outputs/merged/body.md`、`outputs/final/refs.md` 拼接得到。
-- 所有相对路径必须统一使用 `outputs/`。
-- **执行 Word 转换时，必须位于 `outputs` 的父目录**，并使用 `--resource-path=.` 和 `-V lang=zh-CN` 参数。
