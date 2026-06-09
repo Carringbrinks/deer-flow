@@ -1,24 +1,10 @@
 #!/usr/bin/env python
-"""
-Debug script for lead_agent.
-Run this file directly in VS Code with breakpoints.
-
-Requirements:
-    Run with `uv run` from the backend/ directory so that the uv workspace
-    resolves deerflow-harness and app packages correctly:
-
-        cd backend && PYTHONPATH=. uv run python debug.py
-
-Usage:
-    1. Set breakpoints in agent.py or other files
-    2. Press F5 or use "Run and Debug" panel
-    3. Input messages in the terminal to interact with the agent
-"""
-
+import argparse
 import asyncio
 import logging
 import shlex
 import shutil
+import uuid
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -35,8 +21,8 @@ load_dotenv()
 
 _LOG_FMT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 _LOG_DATEFMT = "%Y-%m-%d %H:%M:%S"
-_UPLOAD_COMMANDS = {"upload", "attach"}
-_DEFAULT_UPLOAD_PROMPT = "Please analyze the attached file(s)."
+_UPLOAD_COMMANDS = {"upload"}
+_DEFAULT_UPLOAD_PROMPT = "帮我生成一份关于纺织领域的专利导航报告，具体的写作需求已经通过md文档上传给你，开始生成。"
 
 
 def _split_upload_command(user_input: str) -> tuple[list[str], str]:
@@ -129,7 +115,6 @@ def _build_upload_message(file_paths: list[str], uploads_dir: Path) -> list[dict
 def _print_upload_help() -> None:
     print("上传文件方式:")
     print("  upload /path/to/file1 /path/to/file2 -- 可选的提示消息")
-    print("  attach /path/to/file1 -- 可选的提示消息")
     print("如果省略消息，将发送默认上传提示。")
 
 
@@ -153,13 +138,82 @@ def _setup_logging(log_level: int = logging.INFO) -> None:
         h.close()
     root.setLevel(log_level)
 
-    file_handler = logging.FileHandler("run_agnet.log", mode="a", encoding="utf-8")
+    file_handler = logging.FileHandler("/data2/deer-flow/logs/run_agent.log", mode="a", encoding="utf-8")
     file_handler.setLevel(log_level)
     file_handler.setFormatter(logging.Formatter(_LOG_FMT, datefmt=_LOG_DATEFMT))
     root.addHandler(file_handler)
 
 
-async def main():
+def parse_args() -> argparse.Namespace:
+    """解析命令行参数。"""
+    parser = argparse.ArgumentParser(
+        description="运行交互式脚本",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+示例:
+    # 使用默认参数运行
+    cd backend && PYTHONPATH=. uv run python main/run_agent.py
+
+    # 指定模型运行
+    cd backend && PYTHONPATH=. uv run python main/run_agent.py --model gpt-4o
+
+    # 关闭思考模式
+    cd backend && PYTHONPATH=. uv run python main/run_agent.py --no-thinking
+
+    # 完整参数
+    cd backend && PYTHONPATH=. uv run python main/run_agent.py \\
+        --model Qwen3.6-27B \\
+        --thinking --plan --subagent
+        """,
+    )
+
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="Qwen3.6-27B",
+        help="使用的模型名称 (默认: Qwen3.6-27B)",
+    )
+    parser.add_argument(
+        "--thinking",
+        action="store_true",
+        default=True,
+        help="启用思考模式 (默认: 启用)",
+    )
+    parser.add_argument(
+        "--no-thinking",
+        action="store_false",
+        dest="thinking",
+        help="禁用思考模式",
+    )
+    parser.add_argument(
+        "--plan",
+        action="store_true",
+        default=True,
+        help="启用计划模式 (默认: 启用)",
+    )
+    parser.add_argument(
+        "--no-plan",
+        action="store_false",
+        dest="plan",
+        help="禁用计划模式",
+    )
+    parser.add_argument(
+        "--subagent",
+        action="store_true",
+        default=False,
+        help="启用子代理功能 (默认: 不启用)",
+    )
+    parser.add_argument(
+        "--no-subagent",
+        action="store_false",
+        dest="subagent",
+        help="禁用子代理功能",
+    )
+
+    return parser.parse_args()
+
+
+async def main(args: argparse.Namespace):
     # Install file logging first so warnings emitted while loading config do not
     # leak onto the interactive terminal via Python's lastResort handler.
     _setup_logging()
@@ -174,7 +228,7 @@ async def main():
     # so that any import-time side effects (e.g. deerflow.agents starts a
     # background skill-loader thread on import) emit logs to debug.log instead
     # of leaking onto the interactive terminal via Python's lastResort handler.
-    from langchain_core.messages import HumanMessage
+    from langchain_core.messages import AIMessage, HumanMessage
     from langgraph.runtime import Runtime
 
     from deerflow.agents import make_lead_agent
@@ -186,15 +240,15 @@ async def main():
     except Exception as e:
         print(f"警告: MCP 工具初始化失败: {e}")
 
-    # Create agent with default config
+    # 根据命令行参数创建 agent 配置，thread_id 自动生成
+    thread_id = uuid.uuid4().hex
     config = {
         "configurable": {
-            "thread_id": "thread-001",
-            "thinking_enabled": True,
-            "is_plan_mode": True,
-            "subagent_enabled": True,
-            # Uncomment to use a specific model
-            "model_name": "Qwen3.6-27B",
+            "thread_id": thread_id,
+            "thinking_enabled": args.thinking,
+            "is_plan_mode": args.plan,
+            "subagent_enabled": args.subagent,
+            "model_name": args.model,
         }
     }
 
@@ -206,7 +260,12 @@ async def main():
     session = PromptSession(history=InMemoryHistory()) if _HAS_PROMPT_TOOLKIT else None
 
     print("=" * 50)
-    print("Lead Agent 后端运行模式")
+    print("交互运行模式")
+    print(f"模型: {args.model}")
+    print(f"线程: {thread_id}")
+    print(f"思考模式: {'开' if args.thinking else '关'}")
+    print(f"计划模式: {'开' if args.plan else '关'}")
+    print(f"子代理: {'开' if args.subagent else '关'}")
     print("输入 'quit' 或 'exit' 停止")
     _print_upload_help()
     print(f"日志: run_agent.log (日志级别={app_config.log_level})")
@@ -256,12 +315,31 @@ async def main():
             # 把完整历史传进去
             state = {"messages": history_messages}
 
+            # Track how many messages were in the state before streaming,
+            # so we only print messages that are newly added by the agent.
+            initial_msg_count = len(history_messages)
             msgs = None
-            async for chunk in agent.astream(state, stream_mode="values", config=config):
+            async for chunk in agent.astream(state, stream_mode="values", config=config, debug=False):
                 if "messages" not in chunk:
                     continue
                 msgs = chunk["messages"]
-                msgs[-1].pretty_print()
+                # Only print messages added during this turn
+                for msg in msgs[initial_msg_count:]:
+                    content = getattr(msg, "content", "") or ""
+                    # AIMessage may have empty content when thinking is enabled —
+                    # the real reasoning lives in additional_kwargs["reasoning_content"].
+                    # Skip these intermediate shells unless they carry tool_calls.
+                    if isinstance(msg, AIMessage) and not content:
+                        reasoning = (msg.additional_kwargs or {}).get("reasoning_content", "")
+                        if reasoning:
+                            print(f"\n{'=' * 35} 🤔 Thinking {'=' * 35}")
+                            print(reasoning)
+                            print("=" * 80)
+                        if not msg.tool_calls:
+                            continue
+                    msg.pretty_print()
+
+                # print(response.get("additional_kwargs", {}).get("'reasoning_conten", ""))
             history_messages = msgs
 
             # Show files presented to the user this turn (new artifacts only)
@@ -288,4 +366,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main(parse_args()))

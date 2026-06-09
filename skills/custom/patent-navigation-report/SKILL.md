@@ -40,7 +40,7 @@ patent-navigation-report/
 1.  **阅读本 SKILL.md** — 掌握融合了国标的核心工作流、专利导航模型与通用规范。
 2.  **加载领域模块** — 阅读 `domain_knowledge/{domain}/domain_knowledge.md` 获取行业背景、关键技术与核心竞合主体。
 3.  **加载领域方法论** — 阅读 `domain_knowledge/{domain}/methodology.md` 获取领域专属的产业链分解与分析框架。
-4.  **加载领域大纲** — 阅读 `domain_knowledge/{domain}/report_outline.md` 获取定制化的章节与重点内容布局。
+4.  **加载领域大纲** — 阅读 `domain_knowledge/{domain}/report_outline.md` 获取定制化的章节与重点内容布局,内容为空按照通用模板布局。
 5.  **按需加载**：
     *   `template/report_template.md` — 通用模板，在没有特定领域大纲或者领域大纲文件为空时作为后备框架。
     *   `methodology/general_methodology.md` — 通用方法论，用于补充领域专属方法论中未尽的通用分析范式。
@@ -85,7 +85,7 @@ patent-navigation-report/
 
 ### 第0步：确认需求
 
-在开始撰写前，向用户确认以下信息：
+**用户应在一开始将需求确认内容全部写入一份 Markdown 文档中并上传/提供。** 该需求文档应尽可能覆盖以下信息：
 
 1.  **目标领域**：导航涉及的技术或行业边界。
 2.  **导航类型**（与国标5类对应）：
@@ -100,6 +100,11 @@ patent-navigation-report/
 6.  **报告用途**：指导政策制定、嵌入企业管理、支撑研发或人才方案等。
 7.  **时间范围**：数据检索的历史时段。
 8.  **报告篇幅**：综合型（~25万字）还是聚焦型（~15-20万字）。
+9.  **其他特殊要求**（可选）：用户对报告格式、侧重点、输出方式等的额外说明。
+
+**⚠️ 重要判断逻辑：**
+- **如果用户已上传或提供了需求文档（.md）**：直接解析文档内容，提取上述各项需求信息，进入第1步。无需再次向用户逐项确认。
+- **如果用户未提供需求文档**：主动向用户确认上述信息，待用户明确回复后再进入第1步。不得在需求未明确的情况下直接开始撰写。
 
 **领域模块选择：**
 根据第0步确认的目标领域，加载对应的领域知识文件，为精准的信息采集和分析提供支撑。
@@ -261,7 +266,6 @@ outputs/
 │
 └── final/                      ← 最终交付文件夹（仅存最终成果）
     ├── report.md               ← 最终整合报告（摘要 + 正文 + 参考文献）
-    ├── report.docx             ← Word版本（由 report.md 转换）
     ├── abstract.md             ← 最终润色后的全文摘要（可基于 merged/abstracts.md 再优化）
     └── refs.md                 ← 最终参考文献（来自 merged/references.md）
 ```
@@ -273,7 +277,6 @@ outputs/
 - `outputs/assets/charts/` 仅存放图表图片文件，文件名应符合 `fig_X_X_name.png` 或 `fig_X_X_name.svg`。
 - `outputs/assets/data/` 仅存放图表原始数据，文件名应符合 `data_X_X_name.csv` 或 `data_X_X_name.json`。
 - `outputs/merged/` 必须包含且只包含合并中间产物：`abstracts.md`、`body.md`、`references.md`。
-- `outputs/final/` 必须包含最终交付文件：`report.md`、`report.docx`。
 - `outputs/final/report.md` 必须按“摘要 → 正文 → 参考文献”的顺序组织，且不得包含临时说明、检查记录或过程性文本。
 - 所有路径必须统一使用 `outputs/`；正文中的图表链接必须指向 `/mnt/user-data/outputs/assets/charts/`。
 
