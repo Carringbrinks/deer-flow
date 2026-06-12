@@ -138,7 +138,7 @@ def _setup_logging(log_level: int = logging.INFO) -> None:
         h.close()
     root.setLevel(log_level)
 
-    file_handler = logging.FileHandler("/data2/deer-flow/logs/run_agent.log", mode="a", encoding="utf-8")
+    file_handler = logging.FileHandler("/data2/deer-flow/logs/generate_report.log", mode="a", encoding="utf-8")
     file_handler.setLevel(log_level)
     file_handler.setFormatter(logging.Formatter(_LOG_FMT, datefmt=_LOG_DATEFMT))
     root.addHandler(file_handler)
@@ -268,7 +268,7 @@ async def main(args: argparse.Namespace):
     print(f"子代理: {'开' if args.subagent else '关'}")
     print("输入 'quit' 或 'exit' 停止")
     _print_upload_help()
-    print(f"日志: run_agent.log (日志级别={app_config.log_level})")
+    print(f"日志: generate_report.log (日志级别={app_config.log_level})")
     if not _HAS_PROMPT_TOOLKIT:
         print("提示: `uv sync --group dev` 启用方向键和历史支持")
     print("=" * 50)

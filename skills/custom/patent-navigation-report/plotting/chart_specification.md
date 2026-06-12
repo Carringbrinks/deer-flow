@@ -289,11 +289,11 @@
 
 ### 6.1 图表文件保存路径
 
-生成图表时同步保存两类文件：
+生成图表时同步保存两类文件，所有路径必须使用以 `/mnt/user-data/` 开头的绝对路径：
 
-**图表图片文件：`/mnt/user-data/`**
+**图表图片文件：**
 ```
-outputs/assets/charts/
+/mnt/user-data/outputs/assets/charts/
 ├── fig_1_1_title.png
 ├── fig_1_2_title.png
 ├── ...
@@ -302,9 +302,9 @@ outputs/assets/charts/
 └── ...
 ```
 
-**绘图数据文件：`/mnt/user-data/`**
+**绘图数据文件：**
 ```
-outputs/assets/data/
+/mnt/user-data/outputs/assets/data/
 ├── data_1_1_title.csv          ← CSV格式（表格数据）
 ├── data_1_1_title.json         ← JSON格式（结构化数据）
 ├── data_5_1_title.csv
@@ -367,10 +367,27 @@ JSON文件应包含结构化的数据和元信息：
 - [ ] 图表大小足以清晰阅读
 - [ ] 无多余的装饰性元素
 - [ ] 图号遵循编号规范
-- [ ] 图表图片已保存到 `/mnt/user-data/outputs/assets/charts/`
-- [ ] 绘图数据已保存到 `/mnt/user-data/outputs/assets/data/`
-- [ ] 正文中使用 `/mnt/user-data/outputs/assets/charts/` 绝对路径引用图片
+- [ ] 图表图片已保存到 `/mnt/user-data/outputs/assets/charts/`（绝对路径，非相对路径）
+- [ ] 绘图数据已保存到 `/mnt/user-data/outputs/assets/data/`（绝对路径，非相对路径）
+- [ ] 正文中使用 `/mnt/user-data/outputs/assets/charts/` 绝对路径引用图片，不存在相对路径引用
 
 ## 绘图技巧
 
 - 具体的绘图技巧可以参考chart-visualization技能
+
+---
+
+## ⚠️ 强约束：图表生成不可跳过
+
+本文件在 SKILL.md 的**步骤 B** 中被加载执行。以下规则为强制约束，不得违反：
+
+1. **逐一生成，不得跳过**：正文中每个 `![图X-X...](path)` 占位符都必须在磁盘上生成对应的真实图片文件。发现 N 个占位符，就必须生成 N 个图片文件。
+2. **生成后必须验证**：每生成一个图表，立即用文件系统操作确认文件存在且大小 > 0。不满足则重新生成。
+3. **验证通过前阻断后续步骤**：本章所有图表文件全部通过存在性验证之前，严禁进入步骤 C（参考文献提取）。
+4. **严禁以下借口跳过图表生成**：
+   - ❌ "数据不足，无法绘图" → 应尽力使用已有数据生成
+   - ❌ "该图表类型不支持" → 应选择最接近的可用图表类型
+   - ❌ "先生成占位图，后续再补" → 必须在本步骤内完成最终图表
+   - ❌ "该图表不重要，可以省略" → 不得自行判断图表可省略
+5. **数据真实性**：绘图数据必须来源于专利检索结果或分析计算，严禁凭空编造。
+6. **图表生成后**，将生成状态记录到正文文件末尾的 `<!-- chart_generation_log: ... -->` 注释中（SKILL.md 步骤 B6 规定格式）。

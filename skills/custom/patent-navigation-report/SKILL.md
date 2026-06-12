@@ -129,7 +129,7 @@ domain_knowledge/{domain_name}/report_outline.md
 首先在 `/mnt/user-data/` 下创建以下目录结构：
 
 ```
-outputs/
+/mnt/user-data/outputs/
 ├── parts/                      ← 存放所有中间过程文件（逐章生成产物）
 ├── assets/                     ← 图表与数据资源
 │   ├── charts/                 ← 图表图片文件（PNG / SVG）
@@ -138,26 +138,63 @@ outputs/
 └── final/                      ← 最终交付文件夹（仅存最终成果）
 ```
 
+**⚠️ 路径强制约定：本技能中所有文件保存路径和图片引用路径必须使用以 `/mnt/user-data/outputs/` 开头的绝对路径。严禁使用相对路径（如 `outputs/...` 或 `assets/...`），也不得使用不含 `/mnt/user-data/` 前缀的路径。正文中图表占位符的 `src` 属性同样必须为以 `/mnt/user-data/outputs/assets/` 开头的绝对路径。**
+
 ### 2.2 章节生成标准化循环（A-B-C-D 流程）
 
 对于第1章至最后一章，每一章的生成必须严格遵循以下四个连续步骤：
 
 #### **步骤 A：生成本章正文内容**
 *   **指令下达**：仅向大模型发送本章的生成指令。
-*   **图表占位**：在正文中需要插入图表的位置，直接生成标准化的 Markdown 图片语法。路径必须指向(绝对路径) `/mnt/user-data/outputs/assets/charts/`，命名必须规范。
-    *   *示例：`![图3-1 全球碳纤维专利申请量趋势](/mnt/user-data/outputs/assets/charts/fig_3_1_patent_trend.png)`*
+*   **⚠️ 标题层级强约束（一级标题起步）**：本章正文的 Markdown 标题必须从一级标题开始，严禁从二级或更低层级开始。具体规则如下：
+    *   **章节标题**（如"第一章 项目概述与需求分析"）必须使用一级标题 `# `。
+    *   **节标题**（如"1.1 项目背景"）必须使用二级标题 `## `。
+    *   **子节标题**（如"1.1.1 XXX"或"6.X.1 技术边界与全景"）必须使用三级标题 `### `。
+    *   **严禁**章节标题使用 `## ` 或以任何其他非 `# ` 的层级开头。
+    *   **严禁**跳级使用标题（如从 `# ` 直接跳到 `### `，中间跳过 `## `）。
+    *   *正确示例：`# 第三章 数据来源与研究方法` → `## 3.1 专利数据来源` → `### 3.1.1 检索数据库`*
+    *   *错误示例：`## 第三章 数据来源与研究方法`（章节标题从二级开始，禁止）*
+*   **图表占位**：在正文中需要插入图表的位置，直接生成标准化的 Markdown 图片语法。路径必须使用以 `/mnt/user-data/outputs/assets/charts/` 开头的**绝对路径**。严禁使用相对路径（如 `assets/charts/xxx.png`）或缺少 `/mnt/user-data/` 前缀的路径。
+    *   *正确示例：`![图3-1 全球碳纤维专利申请量趋势](/mnt/user-data/outputs/assets/charts/fig_3_1_patent_trend.png)`*
+    *   *错误示例：`![图3-1 全球碳纤维专利申请量趋势](outputs/assets/charts/fig_3_1_patent_trend.png)`（相对路径，禁止）*
 *   **文献内联**：引用文献时直接在正文中打上标记 `[citation:文献名称](URL)`。
-*   **保存文件**：将生成的正文单独保存，例如 `/mnt/user-data/outputs/parts/part_01_chapter01.md`。
+*   **保存文件**：将生成的正文以绝对路径保存，文件命名格式为 `part_XX_chapterXX.md`（例如：`/mnt/user-data/outputs/parts/part_01_chapter01.md`）。
 
-#### **步骤 B：生成本章配套图表（正文完成后立即执行）**
-*   **占位符提取**：扫描刚刚生成的正文 Markdown 文件，提取所有 `![图X-X...](...)` 占位符。
-*   **数据准备**：准备这些图表所需的绘图原始数据，保存为 `/mnt/user-data/outputs/assets/data/data_X_X_name.csv`。
-*   **图表生成**：调用图表生成工具，生成对应的图片文件，并严格按照正文中占位符的路径和文件名保存至 `/mnt/user-data/outputs/assets/charts/fig_X_X_name.png`。
+#### **步骤 B：生成本章配套图表（正文完成后立即执行，强制不可跳过）**
+
+⚠️ **本步骤为强制步骤，严禁跳过。未完成本步骤前，不得进入步骤 C。**
+
+*   **B1. 占位符提取**：扫描刚刚生成的正文 Markdown 文件（`part_XX_chapterXX.md`），提取所有 `![图X-X...](...)` 和 `![表X-X...](...)` 占位符。将提取到的占位符整理成清单，明确每个图表的编号（如 `图1-1`、`表2-3`）和目标文件路径。
+*   **B2. 占位符校验**：逐一校验提取到的占位符中的图片路径是否为以 `/mnt/user-data/outputs/assets/charts/` 开头的**绝对路径**。如发现相对路径或缺少前缀，立即修正正文文件中的路径。
+*   **B3. 数据准备**：为清单中的每一个图表准备绘图原始数据。数据必须来源于真实的专利检索结果或分析计算，严禁凭空编造。原始数据必须以**绝对路径**保存：
+    *   CSV 格式保存至 `/mnt/user-data/outputs/assets/data/data_X_X_name.csv`
+    *   JSON 格式保存至 `/mnt/user-data/outputs/assets/data/data_X_X_name.json`
+*   **B4. 图表逐一生成（逐个执行，不得批量跳过）**：
+    *   对清单中的**每一个**图表占位符，依次执行以下操作：
+        1. 读取对应的原始数据文件（CSV/JSON）。
+        2. 根据 `plotting/chart_specification.md` 确定图表类型、配色方案和格式标准。
+        3. 使用 Python（matplotlib/seaborn）或等效图表生成工具，编写并执行绘图脚本。
+        4. 将生成的图片文件保存至正文占位符中指定的精确路径（即 `/mnt/user-data/outputs/assets/charts/fig_X_X_name.png`）。
+    *   **⚠️ 严禁以下行为**：
+        *   只生成部分图表而跳过其余。
+        *   以"数据不足"、"图表类型不支持"等为由跳过图表生成——应使用可用数据尽力生成。
+        *   生成占位图片、空白图片或纯文本占位文件替代真实图表。
+*   **B5. 图表存在性验证（阻断性检查）**：
+    *   逐一检查清单中每个图表对应的目标文件是否已在磁盘上创建成功。
+    *   使用文件系统操作确认每个文件存在且文件大小 > 0。
+    *   **若任一图表文件缺失或为空，必须返回 B4 重新生成该图表，直至全部通过。**
+    *   **验证通过前，严禁进入步骤 C。**
 
 #### **步骤 C：提取并保存本章参考文献**
-*   **标记扫描**：扫描刚刚生成的正文 Markdown 文件，提取所有 `[citation:文献名称](URL)` 标记， 没有引用链接的可以不放置URL。
-*   **格式整理**：将这些引用整理成带编号的 Markdown 列表格式（例如：`1. [文献名称](URL)`）。
-*   **独立保存**：将该列表保存为独立的参考文献文件，命名与章节对应，例如 `/mnt/user-data/outputs/parts/part_01_chapter01_refs.md`。
+*   **标记扫描**：扫描刚刚生成的正文 Markdown 文件，提取所有 `[citation:文献名称](URL)` 标记。
+*   **格式整理**：将这些引用整理成**纯编号列表**（从 1 开始的连续序号）。每条编号独立成行，格式为 `1. [文献名称](URL)`。
+*   **⚠️ 强约束 — 参考文献格式：**
+    *   每章参考文献文件**必须仅包含**纯净的编号列表，从 `1.` 开始连续编号。
+    *   **严禁包含任何章节标题**（如 `## 第一章 参考文献` 等）。
+    *   **严禁包含任何分组标题**（如 "中文文献"、"英文文献"、"专利文献" 等）。
+    *   **严禁包含任何说明性文字**（如 "以下为本章参考文献"、"数据来源" 等脚注）。
+    *   文件内容必须可以直接拼接，无需任何预处理即可合并。
+*   **独立保存**：将该列表以绝对路径保存，文件命名格式为 `part_XX_chapterXX_refs.md`（例如：`/mnt/user-data/outputs/parts/part_01_chapter01_refs.md`）。
 
 #### **步骤 D：生成并保存本章摘要**
 
@@ -167,9 +204,11 @@ outputs/
     * 长度：300–500 字（可按需调整）
     * 内容：涵盖核心观点、关键数据、方法或结论
     * 风格：客观、信息密度高、避免冗余
-    * 禁止：不得包含图片语法或 `[citation:...]` 标记
+    * ⚠️ **禁止包含章节标题**：严禁出现任何形式的章节编号、章节名称、"第X章"、`## 摘要`、`### 本章摘要` 等字眼。摘要是纯净的段落文本。
+    * ⚠️ **禁止包含图片语法**：不得包含任何 `![...](...)` Markdown 图片语法。
+    * ⚠️ **禁止包含引用标记**：不得包含 `[citation:...]` 标记。
     * 严禁凭空编造摘要数据，必须与正文内容完全锚定。
-*   **保存路径**：将生成的摘要保存为 `/mnt/user-data/outputs/parts/part_XX_chapterXX_abstract.md`。
+*   **保存路径**：将生成的摘要以绝对路径保存，文件命名格式为 `part_XX_chapterXX_abstract.md`（例如：`/mnt/user-data/outputs/parts/part_01_chapter01_abstract.md`）。
 
 #### 2.3 逐章生成正文（第1章至最后章）
 
@@ -178,8 +217,10 @@ outputs/
 章节顺序与内容结构由领域模块中的 `report_outline.md` 或 `template/report_template.md` 定义。生成时须严格遵循模板规定的章节编号、标题和层级，不得自行增减或调整顺序。
 
 通用生成要求：
-- 每章正文不少于10,000字，核心分析章建议15,000-20,000字
-- 各章独立保存为 `/mnt/user-data/outputs/parts/part_XX_chapterXX.md`
+- 每章正文不少于15,000字，核心分析章建议20,000-25,000字
+- 各章正文、参考文献、摘要三份文件均以**绝对路径**独立保存至 `/mnt/user-data/outputs/parts/`，命名格式为 `part_XX_chapterXX.md`、`part_XX_chapterXX_refs.md`、`part_XX_chapterXX_abstract.md`
+- 正文中所有图片引用、数据文件引用必须使用以 `/mnt/user-data/outputs/assets/` 开头的绝对路径
+- **标题层级**：每章正文必须以 `# 第X章 XXX`（一级标题）开头，节用 `## X.Y`（二级标题），子节用 `### X.Y.Z`（三级标题）。严禁章节标题从 `## ` 开始。
 
 
 ### 第3步：整合输出
@@ -192,12 +233,12 @@ outputs/
 
 合并协议负责规定：
 - 输入文件结构与命名规范
-- `outputs/merged/` 三个中间文件的生成规则
-- `outputs/final/` 最终交付文件的生成规则
+- 中间文件的生成规则（`/mnt/user-data/outputs/merged/`）
+- 最终交付文件的生成规则（`/mnt/user-data/outputs/final/`）
 - 参考文献去重、重编号与最终报告拼接顺序
 - Word 文档转换参考命令
 
-执行合并前必须确认 `outputs/parts/`、`outputs/assets/`、`outputs/merged/`、`outputs/final/` 已按协议创建；执行合并后必须进入“评估”阶段检查输出格式是否合规。
+执行合并前必须确认 `/mnt/user-data/outputs/parts/`、`/mnt/user-data/outputs/assets/`、`/mnt/user-data/outputs/merged/`、`/mnt/user-data/outputs/final/` 已按协议创建；执行合并后必须进入”评估”阶段检查输出格式是否合规。
 
 
 ## 特殊注意事项
@@ -224,8 +265,8 @@ outputs/
 
 ### 篇幅控制
 - 综合型报告目标：250,000中文字符
-- 单章最低不少于10000字
-- 核心分析章（专利全景、细分领域）建议15,000-20,000字
+- 单章最低不少于15，000字
+- 核心分析章（专利全景、细分领域）建议20,000-25,000字
 - 图表不计入字数
 
 ## 评估
@@ -234,8 +275,10 @@ outputs/
 
 ### 输出范式（强制）
 
+所有路径必须以 `/mnt/user-data/` 为根。以下目录树中的 `outputs/` 均指 `/mnt/user-data/outputs/`：
+
 ```
-outputs/
+/mnt/user-data/outputs/
 ├── parts/                      ← 存放所有中间过程文件（逐章生成产物）
 │   ├── part_01_chapter01.md
 │   ├── part_01_chapter01_refs.md
@@ -272,13 +315,16 @@ outputs/
 
 ### 格式检查清单
 
-- `outputs/parts/` 中每个章节必须同时存在正文、参考文献、摘要三个文件：`part_XX_chapterXX.md`、`part_XX_chapterXX_refs.md`、`part_XX_chapterXX_abstract.md`。
+- `/mnt/user-data/outputs/parts/` 中每个章节必须同时存在正文、参考文献、摘要三个文件：`part_XX_chapterXX.md`、`part_XX_chapterXX_refs.md`、`part_XX_chapterXX_abstract.md`。
 - 章节编号必须连续且按两位数字命名，例如 `part_01`、`chapter01`。
-- `outputs/assets/charts/` 仅存放图表图片文件，文件名应符合 `fig_X_X_name.png` 或 `fig_X_X_name.svg`。
-- `outputs/assets/data/` 仅存放图表原始数据，文件名应符合 `data_X_X_name.csv` 或 `data_X_X_name.json`。
-- `outputs/merged/` 必须包含且只包含合并中间产物：`abstracts.md`、`body.md`、`references.md`。
-- `outputs/final/report.md` 必须按“摘要 → 正文 → 参考文献”的顺序组织，且不得包含临时说明、检查记录或过程性文本。
-- 所有路径必须统一使用 `outputs/`；正文中的图表链接必须指向 `/mnt/user-data/outputs/assets/charts/`。
+- `/mnt/user-data/outputs/assets/charts/` 仅存放图表图片文件，文件名应符合 `fig_X_X_name.png` 或 `fig_X_X_name.svg`。
+- `/mnt/user-data/outputs/assets/data/` 仅存放图表原始数据，文件名应符合 `data_X_X_name.csv` 或 `data_X_X_name.json`。
+- `/mnt/user-data/outputs/merged/` 必须包含且只包含合并中间产物：`abstracts.md`、`body.md`、`references.md`。
+- `/mnt/user-data/outputs/final/` 必须包含最终交付文件：`report.md`。
+- `/mnt/user-data/outputs/final/report.md` 必须按”摘要 → 正文 → 参考文献”的顺序组织，且不得包含临时说明、检查记录或过程性文本。
+- 所有路径必须统一使用 `/mnt/user-data/outputs/` 绝对路径；正文中的图表链接必须指向 `/mnt/user-data/outputs/assets/charts/`。严禁出现相对路径（如 `outputs/`、`assets/`、`../` 等）。
+- **标题层级检查**：`/mnt/user-data/outputs/final/report.md` 中"摘要"、"第X章"各章节、"参考文献"必须全部使用 `# `（一级标题）；各章节内节标题必须为 `## `（二级标题），子节标题必须为 `### `（三级标题）。严禁任何章节标题从 `## ` 开始。
+- **图表文件存在性检查**：扫描 `/mnt/user-data/outputs/final/report.md` 中所有 `![...](/mnt/user-data/outputs/assets/charts/...)` 引用，逐一确认每个引用的图片文件在磁盘上实际存在且文件大小 > 0。对于每个缺失或为空的图表文件，记录路径并标注为不合规项。
 
 ### 评估结果输出
 
