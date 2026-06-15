@@ -225,9 +225,19 @@
 - 表：表X-X（Table X-X）
 - 每章内按顺序编号
 
+### ⚠️ 关键约束：编号不得进入图表图片本身
+- **"图X-X"编号仅用于 Markdown 正文中的图片引用语法和图片下方的题注（caption）中。**
+- **生成的图表图片文件（PNG/SVG）自身的标题（title）中严禁包含"图X-X"、"图1-1"、"图2-3"等编号标签。**
+- **图表图片的 title 只能是纯描述性文字**（如"全球碳纤维专利申请量趋势"），不得带任何编号前缀。
+- **正确示例**：
+  - 图片文件内的 matplotlib title：`全球碳纤维专利申请量趋势（1990-2024）`
+  - Markdown 正文中的引用：`![图7-1 全球碳纤维专利申请量趋势](/mnt/user-data/outputs/assets/charts/fig_7_1_trend.png)`
+- **错误示例**：
+  - ❌ 图片文件内的 matplotlib title：`图7-1 全球碳纤维专利申请量趋势`（编号进入了图片，禁止）
+
 ### 示例
-- 图7-1：全球碳纤维专利申请量趋势
-- 表7-2：全球TOP-20专利申请人排名
+- Markdown 引用：`![图7-1 全球碳纤维专利申请量趋势](.../fig_7_1_trend.png)` — "图7-1"在 Markdown 层面
+- 图表图片内部 title：`全球碳纤维专利申请量趋势` — 纯描述性文字，无编号
 
 ---
 
@@ -257,11 +267,26 @@
 
 ## 4. 图表标注标准
 
-### 强制性标注
-- 带有清晰描述名称的图表标题
-- 带单位的坐标轴标签
-- 数据来源标注（例如："数据来源：智慧芽专利数据库"）
-- 数据截止日期说明
+### ⚠️ 核心原则：图表图片与 Markdown 题注分离
+
+图表图片（PNG/SVG）与 Markdown 中的图表引用各有分工，职责严格分离：
+
+| 内容 | 放在哪里 | 说明 |
+|------|----------|------|
+| 图表 title（描述性标题） | 图表图片内部 | 纯描述文字，如"全球碳纤维专利申请量趋势" |
+| 图号/表号（图X-X/表X-X） | Markdown 题注中 | 编号 + 描述，如 `![图7-1 全球碳纤维专利申请量趋势](...)` |
+| 数据来源 | Markdown 题注中 | 如 `*数据来源：智慧芽专利数据库*` |
+| 坐标轴标签/单位 | 图表图片内部 | X/Y 轴标注 |
+
+### 强制性标注（图表图片内部）
+- **图表 title**：纯描述性名称，严禁包含"图X-X"等编号前缀
+- **坐标轴标签**：必须带单位
+- **图例**：多系列图表必须有图例
+
+### 强制性标注（Markdown 题注中）
+- **图号/表号**：使用"图X-X"或"表X-X"格式
+- **数据来源**：标注数据出处（例如："数据来源：智慧芽专利数据库"）
+- **数据截止日期**：说明数据统计截止时间
 
 ### 可选标注
 - 趋势图上的阶段标签
@@ -275,13 +300,24 @@
 
 ### 章节内结构
 1. 图表应紧跟在首次提及该图段落后放置
-2. 图表标题位于图表下方（而非上方）
-3. 每个图表后附简要解读文字
+2. 图表图片通过 Markdown 图片语法 `![...](path)` 引用
+3. **图表图片内部的 title 仅为纯描述性文字**（如"全球碳纤维专利申请量趋势"），**不得包含图号/表号**
+4. **图号/表号与题注放在 Markdown 中**，紧跟在图片语法下方，采用 `*图X-X 描述性标题。数据来源：XXX*` 格式
+5. 每个图表后附简要解读文字
 
 ### 正文引用格式
 - "如图7-1所示，全球碳纤维专利申请量呈现明显的三阶段增长特征。"
 - "由图7-1可见，2010年是中国专利申请量的转折点。"
 - "这主要得益于国家政策的持续支持和产业资本的加速进入。"
+
+### 图表题注格式（Markdown，在图片下方）
+```markdown
+![图表图片引用](/mnt/user-data/outputs/assets/charts/fig_7_1_trend.png)
+
+*图7-1 全球碳纤维专利申请量趋势。数据来源：智慧芽专利数据库，数据截止2024年12月*
+```
+
+**注意**：上方 `![](...)` 中的 alt 文本和下方 `*...*` 中的题注均包含"图7-1"，但**图表图片文件自身的 title 不含"图7-1"**。
 
 ---
 
@@ -328,6 +364,10 @@
 [citation:Patsnap Database](https://www.zhihuiya.com/)
 ```
 
+**⚠️ 注意**：Markdown 的 `![...]` alt 文本和下方 `*...*` 题注中都包含"图5-1"编号，这符合规范。但**图表图片文件（fig_5_1_trend.png）内部通过 matplotlib 设置的 title 必须仅为 "全球碳纤维专利申请趋势（1990-2024）"，严禁包含"图5-1"编号前缀**。即：
+- 图片文件内部 title：`全球碳纤维专利申请趋势（1990-2024）` ✅
+- 图片文件内部 title：`图5-1 全球碳纤维专利申请趋势（1990-2024）` ❌
+
 ### 6.4 数据文件内容要求
 
 CSV文件应包含生成图表所用的完整数据：
@@ -357,7 +397,7 @@ JSON文件应包含结构化的数据和元信息：
 
 ## 7. 图表质量检查清单
 
-- [ ] 图表具有描述性标题
+- [ ] 图表具有描述性标题（纯描述文字，不含"图X-X"编号）
 - [ ] 坐标轴已标注单位
 - [ ] 已标注数据来源（含可点击链接）
 - [ ] 正文中已引用图表
@@ -366,10 +406,91 @@ JSON文件应包含结构化的数据和元信息：
 - [ ] 多系列图表包含图例
 - [ ] 图表大小足以清晰阅读
 - [ ] 无多余的装饰性元素
-- [ ] 图号遵循编号规范
+- [ ] 图号遵循编号规范（仅在 Markdown 题注中，不在图片内）
 - [ ] 图表图片已保存到 `/mnt/user-data/outputs/assets/charts/`（绝对路径，非相对路径）
 - [ ] 绘图数据已保存到 `/mnt/user-data/outputs/assets/data/`（绝对路径，非相对路径）
 - [ ] 正文中使用 `/mnt/user-data/outputs/assets/charts/` 绝对路径引用图片，不存在相对路径引用
+- [ ] **中文字体配置已执行**：所有中文文本（标题、轴标签、刻度、图例）正确渲染，无方块乱码
+- [ ] **图表标题不含图号**：图片文件的 title 仅为纯描述，不含"图X-X"格式的编号
+
+## 8. 中文字体渲染配置（强制）
+
+专利导航报告包含大量中文内容（标题、坐标轴标签、图例、数据标签等），必须正确配置中文字体，否则图表中的所有中文都会显示为方块乱码。
+
+### 8.1 字体选择
+
+优先使用以下中文字体（按优先级排列）：
+
+| 优先级 | 字体名称 | 适用系统 | 安装方式 |
+|--------|----------|----------|----------|
+| 1 | Noto Sans CJK SC | Linux (通用) | `apt install fonts-noto-cjk` |
+| 2 | WenQuanYi Micro Hei | Linux | `apt install fonts-wqy-microhei` |
+| 3 | WenQuanYi Zen Hei | Linux | `apt install fonts-wqy-zenhei` |
+| 4 | SimHei | Linux/Windows | 通常已安装或手动下载 |
+| 5 | Microsoft YaHei | Windows | 通常已安装 |
+| 6 | PingFang SC | macOS | 系统自带 |
+| 7 | Heiti SC | macOS | 系统自带 |
+
+### 8.2 matplotlib 字体配置（Python 绘图脚本必须执行的初始化代码）
+
+**每份 Python 绘图脚本开头必须**包含以下字体配置代码：
+
+```python
+import matplotlib
+matplotlib.use('Agg')  # 非交互式后端，避免 GUI 依赖
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+
+# === 中文字体配置（强制，不可省略）===
+def setup_chinese_font():
+    """
+    配置 matplotlib 中文字体。按优先级自动检测可用字体。
+    必须调用此函数后再进行任何绘图操作。
+    """
+    # 按优先级检测可用中文字体
+    candidate_fonts = [
+        'Noto Sans CJK SC',
+        'WenQuanYi Micro Hei',
+        'WenQuanYi Zen Hei',
+        'SimHei',
+        'Microsoft YaHei',
+        'PingFang SC',
+        'Heiti SC',
+        'AR PL UMing CN',
+        'AR PL UKai CN',
+    ]
+
+    available_fonts = [f.name for f in fm.fontManager.ttflist]
+    selected_font = None
+
+    for font_name in candidate_fonts:
+        if font_name in available_fonts:
+            selected_font = font_name
+            break
+
+    if selected_font is None:
+        # 最后兜底：尝试通过通配查找任何可用的 CJK 字体
+        cjk_fonts = [f for f in fm.fontManager.ttflist
+                     if any(kw in f.name.lower() for kw in ['cjk', 'hei', 'ming', 'song', 'kai', 'fang', 'chinese', 'cn', 'sc'])]
+        if cjk_fonts:
+            selected_font = cjk_fonts[0].name
+        else:
+            raise RuntimeError(
+                "未找到任何可用的中文字体！"
+                "请执行: sudo apt install fonts-noto-cjk fonts-wqy-microhei"
+            )
+
+    plt.rcParams['font.sans-serif'] = [selected_font]
+    plt.rcParams['font.family'] = 'sans-serif'
+    plt.rcParams['axes.unicode_minus'] = False  # 解决负号 '-' 显示为方块的问题
+    plt.rcParams['mathtext.default'] = 'regular'  # 数学文本使用常规字体
+
+    print(f"[字体配置] 使用中文字体: {selected_font}")
+    return selected_font
+
+# 在脚本开始处调用
+FONT_NAME = setup_chinese_font()
+```
 
 ## 绘图技巧
 
@@ -390,4 +511,5 @@ JSON文件应包含结构化的数据和元信息：
    - ❌ "先生成占位图，后续再补" → 必须在本步骤内完成最终图表
    - ❌ "该图表不重要，可以省略" → 不得自行判断图表可省略
 5. **数据真实性**：绘图数据必须来源于专利检索结果或分析计算，严禁凭空编造。
-6. **图表生成后**，将生成状态记录到正文文件末尾的 `<!-- chart_generation_log: ... -->` 注释中（SKILL.md 步骤 B6 规定格式）。
+6. **图表 title 禁止包含图号**：生成的图表图片（PNG/SVG）自身的 title 严禁包含"图X-X"、"图1-1"等编号。编号仅存在于 Markdown 题注中。违反此规则必须重新生成图表。
+7. **中文字体必须配置**：每份 Python 绘图脚本必须执行本文档第 8 节规定的字体配置代码。生成的图表中所有中文必须正确渲染，不得出现方块乱码。违反此规则必须修复字体配置后重新生成。
