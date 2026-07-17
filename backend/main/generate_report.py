@@ -22,7 +22,8 @@ load_dotenv()
 _LOG_FMT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 _LOG_DATEFMT = "%Y-%m-%d %H:%M:%S"
 _UPLOAD_COMMANDS = {"upload"}
-_DEFAULT_UPLOAD_PROMPT = "帮我生成一份关于纺织领域的专利导航报告，具体的写作需求已经通过md文档上传给你，开始生成。"
+# _DEFAULT_UPLOAD_PROMPT = "帮我生成一份关于纺织领域的专利导航报告，具体的写作需求已经通过md文档上传给你，开始生成。"
+_DEFAULT_UPLOAD_PROMPT = "请深度调查这批企业的专利成果数据并做出综合评价"
 
 
 def _split_upload_command(user_input: str) -> tuple[list[str], str]:

@@ -11,17 +11,13 @@ async def main():
     for t in tools:
         print(t.name)
 
-    run = next(t for t in tools if t.name == "mcp-clickhouse_run_query")
-    # result = await run.ainvoke({"query": "SELECT currentDatabase() AS db"})
-    # print("QUERY_RESULT", result)
-    # result = await run.ainvoke({
-    # "query": "SHOW TABLES"
-    # })
-    # print(result)
-    # # result = await run.ainvoke({
-    # # "query": "SELECT * FROM distributed_CNKI LIMIT 1"
-    # # })
-    # # print(result)
+    run = next(t for t in tools if t.name == "mcp-clickhouse-hzq_run_query")
+    result = await run.ainvoke({"query": "SELECT currentDatabase() AS db"})
+    print("QUERY_RESULT", result)
+    result = await run.ainvoke({"query": "SHOW TABLES"})
+    print(result)
+    result = await run.ainvoke({"query": "SELECT * FROM distributed_CNKI LIMIT 1"})
+    print(result)
     result = await run.ainvoke({"query": "SHOW CREATE TABLE distributed_CNKI"})
     print(result)
     result = await run.ainvoke(
