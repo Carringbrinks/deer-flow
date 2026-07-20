@@ -12,7 +12,7 @@ description: >
   - 任何要求对企业做专利方面的综合分析、深度调查、成果评价的请求
   - 用户提供了企业名称列表并要求分析其专利情况
 
-  【禁止反问】本技能的数据源已包含企业专利数据（patent_data_ccb表），无需用户单独提供企业名单。
+  【禁止反问】本技能的数据源已包含企业专利数据（patent_data_ccb 和 t_patent_data_ai 表），无需用户单独提供企业名单。
   即使用户未明确列出企业名称，也应直接运行分析流程，从数据库中获取结果。
   用户说"这批企业"时，指的是数据库中已有的企业数据，直接启动 run_all.py 即可。
 
@@ -24,15 +24,15 @@ description: >
 
 ## 概述
 
-本技能对专利数据进行系统性的企业科创属性评价和行业位阶分析，分为三个阶段：
+本技能对专利数据进行系统性的**企业科创属性评价**和**行业位阶分析**，结合二者形成对企业专利实力的综合评价。分为三个阶段：
 
 | 阶段 | 脚本 | 说明 |
 |------|------|------|
 | 第一阶段 | step1_industry_benchmark.py | 构建全球和中国行业基准 |
-| 第二阶段 | step2_enterprise_eval.py | 企业多维度科创属性评分 |
-| 第三阶段 | step3_industry_rank.py | 计算企业行业位阶排名 |
+| 第二阶段 | step2_enterprise_eval.py | 企业多维度科创属性评分（CCB + AI） |
+| 第三阶段 | step3_industry_rank.py | 计算企业行业位阶排名（CCB + AI） |
 
-三个阶段必须按顺序执行：先建基准 → 再评价企业 → 最后算位阶。
+三个阶段必须按顺序执行：先建基准 → 再评价企业科创属性 → 最后算行业位阶，综合二者得出企业在行业中的定位。
 
 ## 快速开始
 
@@ -84,10 +84,13 @@ result = client.query("SELECT ...")
 | 表名 | 用途 |
 |------|------|
 | `XiaoSu.t_patent_data` | 全球专利数据（行业基准用） |
-| `XiaoSu.patent_data_ccb` | 建行浙江企业专利数据（企业评价用） |
+| `XiaoSu.patent_data_ccb` | 建行浙江企业专利数据（企业评价用，默认数据源） |
+| `XiaoSu.t_patent_data_ai` | AI 企业专利数据（企业评价用，字段与计算逻辑与 patent_data_ccb 完全相同） |
 | `XiaoSu.industry_quantile` | 输出：行业基准分位数 |
-| `XiaoSu.enterprise_eval_result` | 输出：企业科创属性评价结果 |
-| `XiaoSu.enterprise_industry_rank` | 输出：企业行业位阶排名 |
+| `XiaoSu.enterprise_eval_result` | 输出：CCB 企业科创属性评价结果 |
+| `XiaoSu.enterprise_eval_result_ai` | 输出：AI 企业科创属性评价结果（字段与 CCB 完全一致） |
+| `XiaoSu.enterprise_industry_rank` | 输出：CCB 企业行业位阶排名 |
+| `XiaoSu.enterprise_industry_rank_ai` | 输出：AI 企业行业位阶排名（字段与 CCB 完全一致） |
 
 临时表以 `tmp_` 开头，每次运行会自动清理重建。
 
@@ -109,7 +112,7 @@ result = client.query("SELECT ...")
 
 ### 第二阶段：企业科创属性评价（step2_enterprise_eval.py）
 
-7 维度加权评分（各维度 0-100 分）：
+依次处理 `patent_data_ccb` 和 `t_patent_data_ai` 两张表，7 维度加权评分（各维度 0-100 分）：
 
 | 维度 | 权重 | 指标 |
 |------|------|------|
@@ -121,14 +124,16 @@ result = client.query("SELECT ...")
 | 法律状态 | 10% | 有效专利占比、复审无效诉讼风险 |
 | 资质属性 | 15% | 科技型/高新技术企业、上市状态、企业规模 |
 
-参考 SQL: `references/enterprise_eval_ch.sql`
+参考 SQL: `references/enterprise_eval_ch.sql`（CCB）、`references/enterprise_eval_ai.sql`（AI）
 
 ### 第三阶段：行业位阶（step3_industry_rank.py）
+
+依次处理 CCB 和 AI 企业的临时表数据，**结合企业科创属性评分和行业基准**，计算行业位阶排名：
 
 1. 取每家企业专利数量最多的前3个IPC小类
 2. 对照 `industry_quantile` 分位数插值得到百分位
 3. 按专利数量加权计算三维综合百分位
-4. 按综合百分位分档：
+4. 结合科创属性评分和行业位阶百分位，按综合百分位分档：
 
 | 百分位 | 档位 |
 |--------|------|
@@ -139,16 +144,16 @@ result = client.query("SELECT ...")
 | ≥ 10 | 行业落后 |
 | < 10 | 行业底部 |
 
-参考 SQL: `references/enterprise_industry_rank_v3.sql`
+参考 SQL: `references/enterprise_industry_rank_v3.sql`（CCB）、`references/enterprise_industry_rank_ai.sql`（AI）
 
 ## 用户交互指引
 
 | 用户问法（自然语言） | 执行动作 | 说明 |
 |----------------------|----------|------|
-| 深度调查这批企业的专利成果数据并做出综合评价 | 运行 `run_all.py` 全流程 | 最常见的触发方式 |
+| 深度调查这批企业的专利成果数据并做出综合评价 | 运行 `run_all.py` 全流程 | 自动处理 CCB + AI 两张表 |
 | 分析这些企业的专利情况 | 运行 `run_all.py` 全流程 | 企业名单已在数据库中 |
 | 帮我看看这几家公司的专利实力怎么样 | 运行 `run_all.py` 全流程 | 直接执行，无需确认企业 |
-| 做一次企业专利成果深度调查 | 运行 `run_all.py` 全流程 | — |
+| 做一次企业专利成果深度调查 | 运行 `run_all.py` 全流程 | CCB 和 AI 数据一并评价 |
 | 评估企业科创属性和行业地位 | 运行 `run_all.py` 全流程 | — |
 | 这批企业的行业排名如何 | 运行 `run_all.py` 全流程 | — |
 | 查看行业基准数据 | 运行 step1 后查询 `industry_quantile` | 仅需基准数据时 |
@@ -165,9 +170,10 @@ result = client.query("SELECT ...")
 3. 每次运行自动清理临时表
 4. 第一阶段数据量大，耗时较长
 5. 参考 SQL 在 `references/` 目录
-6. **用户说"这批企业"/"这些企业"时，指的是数据库 `patent_data_ccb` 表中已有的企业，不是要求用户提供名单**
-7. **切勿反问用户"请问您要分析哪些企业"或"请提供企业名单"——直接运行分析即可**
-8. 如果报告中需要绘图，必须在沙箱中安装中文字体，否则图表中的中文会显示为乱码。安装方法：
+6. **用户说"这批企业"/"这些企业"时，指的是数据库 `patent_data_ccb` 和 `t_patent_data_ai` 两张表中已有的企业，不是要求用户提供名单**
+7. **每次运行自动处理两张表：patent_data_ccb（建行浙江）和 t_patent_data_ai（AI 数据），计算逻辑完全一致，临时表通过 `_ai` 后缀区分**
+8. **切勿反问用户"请问您要分析哪些企业"或"请提供企业名单"——直接运行分析即可**
+9. 如果报告中需要绘图，必须在沙箱中安装中文字体，否则图表中的中文会显示为乱码。安装方法：
 ```bash
 apt-get update && apt-get install -y fonts-noto-cjk fonts-wqy-microhei
 ```

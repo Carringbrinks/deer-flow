@@ -33,18 +33,32 @@ async def cleanup_all():
         "DROP TABLE IF EXISTS XiaoSu.tmp_ent_subclass_global",
         "DROP TABLE IF EXISTS XiaoSu.tmp_ent_subclass_china",
         "DROP TABLE IF EXISTS XiaoSu.industry_quantile",
-        # Step2 临时表和结果表 (XiaoSu)
+        # Step2 临时表和结果表 — CCB (XiaoSu)
         "DROP TABLE IF EXISTS XiaoSu.tmp_enterprise_patent",
         "DROP TABLE IF EXISTS XiaoSu.tmp_ipc_classes",
         "DROP TABLE IF EXISTS XiaoSu.tmp_strategic",
         "DROP TABLE IF EXISTS XiaoSu.tmp_ipc_count",
         "DROP TABLE IF EXISTS XiaoSu.tmp_strategic_count",
+        # Step2 临时表 — AI (XiaoSu)
+        "DROP TABLE IF EXISTS XiaoSu.tmp_enterprise_patent_ai",
+        "DROP TABLE IF EXISTS XiaoSu.tmp_ipc_classes_ai",
+        "DROP TABLE IF EXISTS XiaoSu.tmp_strategic_ai",
+        "DROP TABLE IF EXISTS XiaoSu.tmp_ipc_count_ai",
+        "DROP TABLE IF EXISTS XiaoSu.tmp_strategic_count_ai",
+        # Step2 结果表 (XiaoSu)
         "DROP TABLE IF EXISTS XiaoSu.enterprise_eval_result",
-        # Step3 临时表和结果表 (XiaoSu)
+        "DROP TABLE IF EXISTS XiaoSu.enterprise_eval_result_ai",
+        # Step3 临时表 — CCB (XiaoSu)
         "DROP TABLE IF EXISTS XiaoSu.tmp_ent_subclass_metrics",
         "DROP TABLE IF EXISTS XiaoSu.tmp_ent_top3_subclass",
         "DROP TABLE IF EXISTS XiaoSu.tmp_ent_subclass_pct",
+        # Step3 临时表 — AI (XiaoSu)
+        "DROP TABLE IF EXISTS XiaoSu.tmp_ent_subclass_metrics_ai",
+        "DROP TABLE IF EXISTS XiaoSu.tmp_ent_top3_subclass_ai",
+        "DROP TABLE IF EXISTS XiaoSu.tmp_ent_subclass_pct_ai",
+        # Step3 结果表 (XiaoSu)
         "DROP TABLE IF EXISTS XiaoSu.enterprise_industry_rank",
+        "DROP TABLE IF EXISTS XiaoSu.enterprise_industry_rank_ai",
     ]
 
     for sql in cleanup_sqls:
@@ -129,9 +143,17 @@ async def main():
                 "SELECT level, count() AS cnt FROM XiaoSu.enterprise_industry_rank "
                 "GROUP BY level ORDER BY cnt DESC"
             )
-            logger.info(f"行业位阶分布：{format_result(result)}")
+            logger.info(f"CCB 行业位阶分布：{format_result(result)}")
         except Exception as e:
-            logger.error(f"无法查询结果：{e}")
+            logger.error(f"无法查询 CCB 结果：{e}")
+        try:
+            result_ai = await execute_sql(
+                "SELECT level, count() AS cnt FROM XiaoSu.enterprise_industry_rank_ai "
+                "GROUP BY level ORDER BY cnt DESC"
+            )
+            logger.info(f"AI  行业位阶分布：{format_result(result_ai)}")
+        except Exception as e:
+            logger.error(f"无法查询 AI 结果：{e}")
 
 
 if __name__ == "__main__":
