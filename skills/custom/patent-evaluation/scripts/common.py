@@ -164,6 +164,46 @@ def format_result(result) -> str:
     return str(result)[:100]
 
 
+def render_sql_template(filepath: str, **kwargs) -> str:
+    """读取 SQL 模板文件，替换占位符后返回渲染后的 SQL 字符串。
+
+    占位符格式为 {key}，与 Python str.format() 一致。
+    模板中使用 {{ 和 }} 来保留字面花括号（如 ClickHouse 的 lambda 表达式）。
+
+    参数:
+        filepath: SQL 模板文件的绝对路径
+        **kwargs: 键值对，用于替换模板中的 {key} 占位符
+    """
+    with open(filepath, encoding="utf-8") as f:
+        raw = f.read()
+
+    # 保护 lambda 表达式中的花括号：{x -> ...} 这类模式
+    # 先把 ClickHouse lambda 的 { 替换为哨兵，format 后再换回来
+    import re
+
+    # 匹配 ClickHouse lambda: {x -> ...} 或 {x, y -> ...}
+    lambda_pattern = re.compile(r'\{(\w+(?:\s*,\s*\w+)*)\s*->')
+    sentinel_map = {}
+    counter = [0]
+
+    def _replace_lambda(m: re.Match):
+        key = f"__CLICKHOUSE_LAMBDA_{counter[0]}__"
+        sentinel_map[key] = m.group(0)
+        counter[0] += 1
+        return key
+
+    protected = lambda_pattern.sub(_replace_lambda, raw)
+
+    # 执行 Python 格式化
+    rendered = protected.format(**kwargs)
+
+    # 恢复 lambda 表达式
+    for sentinel, original in sentinel_map.items():
+        rendered = rendered.replace(sentinel, original)
+
+    return rendered
+
+
 async def execute_sql_file(label: str, filepath: str):
     """读取 SQL 文件并按分号拆分逐条执行
 
@@ -189,6 +229,38 @@ async def execute_sql_file(label: str, filepath: str):
     logger.info(f"[{label}] 共 {total} 条 SQL 语句待执行")
     for i, stmt in enumerate(statements, 1):
         logger.info(f"[{label}] 执行第 {i}/{total} 条...")
+        try:
+            result = await execute_sql(stmt)
+            logger.info(f"  完成: {format_result(result)}")
+        except Exception as e:
+            logger.exception(f"  错误: {e}")
+            raise
+
+
+async def execute_sql_text(label: str, sql_text: str):
+    """执行已渲染的 SQL 文本（按分号拆分逐条执行）
+
+    参数:
+        label: 日志标签
+        sql_text: 渲染后的完整 SQL 文本
+    """
+    statements = split_sql_statements(sql_text)
+    # 过滤纯注释块
+    statements = [
+        s
+        for s in statements
+        if not all(
+            l_str.strip().startswith("--") or l_str.strip() == ""
+            for l_str in s.split("\n")
+        )
+    ]
+
+    total = len(statements)
+    logger.info(f"[{label}] 共 {total} 条 SQL 语句待执行")
+    for i, stmt in enumerate(statements, 1):
+        # 截取语句开头用于日志展示
+        preview = stmt[:80].replace("\n", " ") + ("..." if len(stmt) > 80 else "")
+        logger.info(f"[{label}] 执行第 {i}/{total} 条: {preview}")
         try:
             result = await execute_sql(stmt)
             logger.info(f"  完成: {format_result(result)}")

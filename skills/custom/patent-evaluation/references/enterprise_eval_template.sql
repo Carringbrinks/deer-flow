@@ -1,13 +1,17 @@
 -- =====================================================
--- ClickHouse: 企业科创属性评价模型（中间表法）
--- 基于 patent_data_ccb（建行浙江专利数据）
+-- ClickHouse: 企业科创属性评价模型（模板 — 参数化）
+-- 基于 {source_table}（指定的企业专利数据表）
 -- 分步建中间表，避免复杂嵌套查询
+--
+-- 占位符:
+--   {source_table}  — 源表全路径，如 XiaoSu.patent_data_ccb
+--   {suffix}        — 表后缀，如 "" (CCB) 或 "_ai" (AI)
 -- =====================================================
 
 -- ============ Step 1: 结果表 ============
-DROP TABLE IF EXISTS XiaoSu.enterprise_eval_result;
+DROP TABLE IF EXISTS XiaoSu.enterprise_eval_result{suffix};
 
-CREATE TABLE IF NOT EXISTS XiaoSu.enterprise_eval_result
+CREATE TABLE IF NOT EXISTS XiaoSu.enterprise_eval_result{suffix}
 (
     enterprise_name  String,
     patent_count     UInt64,
@@ -28,15 +32,15 @@ ENGINE = MergeTree()
 ORDER BY total_score;
 
 -- ============ Step 2: 拆解企业名称 ============
-DROP TABLE IF EXISTS XiaoSu.tmp_enterprise_patent;
+DROP TABLE IF EXISTS XiaoSu.tmp_enterprise_patent{suffix};
 
-CREATE TABLE XiaoSu.tmp_enterprise_patent
+CREATE TABLE XiaoSu.tmp_enterprise_patent{suffix}
 ENGINE = MergeTree()
 ORDER BY (enterprise_name)
 AS SELECT
     enterprise_name,
     `专利类型`,
-    parseDateTimeBestEffortOrNull(`申请日`) AS apply_date,
+    parseDateTimeBestEffortOrNull(toString(`申请日`)) AS apply_date,
     `被引用数量` AS cited,
     `引用数量` AS refs,
     `申请人数量` AS applicant_cnt,
@@ -58,7 +62,7 @@ AS SELECT
     `上市状态`,
     `数字经济核心产业`,
     `绿色低碳技术`
-FROM XiaoSu.patent_data_ccb
+FROM {source_table}
 ARRAY JOIN arrayDistinct(arrayFilter(
     x -> x != '' AND length(x) > 1,
     arrayMap(x -> trim(x), arrayConcat(
@@ -68,9 +72,9 @@ ARRAY JOIN arrayDistinct(arrayFilter(
 )) AS enterprise_name;
 
 -- ============ Step 3: 拆解 IPC 大类 ============
-DROP TABLE IF EXISTS XiaoSu.tmp_ipc_classes;
+DROP TABLE IF EXISTS XiaoSu.tmp_ipc_classes{suffix};
 
-CREATE TABLE XiaoSu.tmp_ipc_classes
+CREATE TABLE XiaoSu.tmp_ipc_classes{suffix}
 ENGINE = MergeTree()
 ORDER BY (enterprise_name)
 AS SELECT DISTINCT
@@ -78,15 +82,15 @@ AS SELECT DISTINCT
     substring(trim(ipc_raw), 1, 4) AS ipc_class
 FROM (
     SELECT enterprise_name, arrayJoin(splitByString(';', `IPC分类号`)) AS ipc_raw
-    FROM XiaoSu.tmp_enterprise_patent
+    FROM XiaoSu.tmp_enterprise_patent{suffix}
     WHERE `IPC分类号` != ''
 )
 WHERE substring(trim(ipc_raw), 1, 4) != '';
 
 -- ============ Step 4: 拆解战略性新兴产业 ============
-DROP TABLE IF EXISTS XiaoSu.tmp_strategic;
+DROP TABLE IF EXISTS XiaoSu.tmp_strategic{suffix};
 
-CREATE TABLE XiaoSu.tmp_strategic
+CREATE TABLE XiaoSu.tmp_strategic{suffix}
 ENGINE = MergeTree()
 ORDER BY (enterprise_name)
 AS SELECT DISTINCT
@@ -94,33 +98,33 @@ AS SELECT DISTINCT
     trim(si_raw) AS si
 FROM (
     SELECT enterprise_name, arrayJoin(splitByString(';', `战略性新兴产业`)) AS si_raw
-    FROM XiaoSu.tmp_enterprise_patent
+    FROM XiaoSu.tmp_enterprise_patent{suffix}
     WHERE `战略性新兴产业` != ''
 )
 WHERE trim(si_raw) != '';
 
 -- ============ Step 5a: IPC 计数表（按企业聚合） ============
-DROP TABLE IF EXISTS XiaoSu.tmp_ipc_count;
+DROP TABLE IF EXISTS XiaoSu.tmp_ipc_count{suffix};
 
-CREATE TABLE XiaoSu.tmp_ipc_count
+CREATE TABLE XiaoSu.tmp_ipc_count{suffix}
 ENGINE = MergeTree()
 ORDER BY enterprise_name
 AS SELECT enterprise_name, count(*) AS cnt
-    FROM XiaoSu.tmp_ipc_classes
+    FROM XiaoSu.tmp_ipc_classes{suffix}
 GROUP BY enterprise_name;
 
 -- ============ Step 5b: 战略性新兴产业计数表（按企业聚合） ============
-DROP TABLE IF EXISTS XiaoSu.tmp_strategic_count;
+DROP TABLE IF EXISTS XiaoSu.tmp_strategic_count{suffix};
 
-CREATE TABLE XiaoSu.tmp_strategic_count
+CREATE TABLE XiaoSu.tmp_strategic_count{suffix}
 ENGINE = MergeTree()
 ORDER BY enterprise_name
 AS SELECT enterprise_name, count(*) AS cnt
-    FROM XiaoSu.tmp_strategic
+    FROM XiaoSu.tmp_strategic{suffix}
 GROUP BY enterprise_name;
 
--- ============ Step 5c: 聚合计算（仅关联计数小表） ============
-INSERT INTO XiaoSu.enterprise_eval_result
+-- ============ Step 5c: 聚合计算 ============
+INSERT INTO XiaoSu.enterprise_eval_result{suffix}
 SELECT
     enterprise_name,
     total AS patent_count,
@@ -171,15 +175,15 @@ FROM (
         countIf(`绿色低碳技术` != '') AS green_flag,
         max(ipc.cnt) AS ipc_class_cnt,
         max(si.cnt) AS strategic_cnt
-    FROM XiaoSu.tmp_enterprise_patent AS ep
-    LEFT JOIN XiaoSu.tmp_ipc_count AS ipc ON ep.enterprise_name = ipc.enterprise_name
-    LEFT JOIN XiaoSu.tmp_strategic_count AS si ON ep.enterprise_name = si.enterprise_name
+    FROM XiaoSu.tmp_enterprise_patent{suffix} AS ep
+    LEFT JOIN XiaoSu.tmp_ipc_count{suffix} AS ipc ON ep.enterprise_name = ipc.enterprise_name
+    LEFT JOIN XiaoSu.tmp_strategic_count{suffix} AS si ON ep.enterprise_name = si.enterprise_name
     GROUP BY ep.enterprise_name
 ) AS agg;
 
 -- ============ Step 6: 清理中间表（可选） ============
--- DROP TABLE IF EXISTS tmp_enterprise_patent;
--- DROP TABLE IF EXISTS tmp_ipc_classes;
--- DROP TABLE IF EXISTS tmp_strategic;
--- DROP TABLE IF EXISTS tmp_ipc_count;
--- DROP TABLE IF EXISTS tmp_strategic_count;
+-- DROP TABLE IF EXISTS XiaoSu.tmp_enterprise_patent{suffix};
+-- DROP TABLE IF EXISTS XiaoSu.tmp_ipc_classes{suffix};
+-- DROP TABLE IF EXISTS XiaoSu.tmp_strategic{suffix};
+-- DROP TABLE IF EXISTS XiaoSu.tmp_ipc_count{suffix};
+-- DROP TABLE IF EXISTS XiaoSu.tmp_strategic_count{suffix};

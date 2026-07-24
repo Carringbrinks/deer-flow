@@ -1,14 +1,18 @@
 -- =====================================================
--- ClickHouse: 企业行业位阶（对照全球/中国基准，3维）
+-- ClickHouse: 企业行业位阶（模板 — 参数化，对照全球/中国基准，3维）
 -- 1. 取企业专利数前 3 IPC 小类，按数量赋权
 -- 2. 对照 industry_quantile 分位数插值得到百分位
 -- 3. 3 维（密度/引用/家族）取均值→综合位阶
+--
+-- 占位符:
+--   {suffix} — 表后缀，如 "" (CCB) 或 "_ai" (AI)
+-- 前置条件: step2 已运行，tmp_enterprise_patent{suffix} 和 enterprise_eval_result{suffix} 已存在
 -- =====================================================
 
 -- ============ Step 1: 企业 × 小类 指标（仅该小类下专利）============
-DROP TABLE IF EXISTS XiaoSu.tmp_ent_subclass_metrics;
+DROP TABLE IF EXISTS XiaoSu.tmp_ent_subclass_metrics{suffix};
 
-CREATE TABLE XiaoSu.tmp_ent_subclass_metrics
+CREATE TABLE XiaoSu.tmp_ent_subclass_metrics{suffix}
 ENGINE = MergeTree()
 ORDER BY (enterprise_name, subclass)
 AS SELECT
@@ -25,16 +29,16 @@ FROM (
         cited AS avg_cited,
         family AS avg_family,
         claims AS avg_claims
-    FROM XiaoSu.tmp_enterprise_patent
+    FROM XiaoSu.tmp_enterprise_patent{suffix}
     ARRAY JOIN splitByString(';', `IPC分类号`) AS ipc_raw
     WHERE `IPC分类号` != '' AND substring(trim(ipc_raw), 1, 4) != ''
 )
 GROUP BY enterprise_name, subclass;
 
 -- ============ Step 2: 前 3 小类（按专利条数） ============
-DROP TABLE IF EXISTS XiaoSu.tmp_ent_top3_subclass;
+DROP TABLE IF EXISTS XiaoSu.tmp_ent_top3_subclass{suffix};
 
-CREATE TABLE XiaoSu.tmp_ent_top3_subclass
+CREATE TABLE XiaoSu.tmp_ent_top3_subclass{suffix}
 ENGINE = MergeTree()
 ORDER BY (enterprise_name, subclass)
 AS SELECT
@@ -47,14 +51,14 @@ FROM (
         subclass,
         cnt,
         row_number() OVER (PARTITION BY enterprise_name ORDER BY cnt DESC) AS rn
-    FROM XiaoSu.tmp_ent_subclass_metrics
+    FROM XiaoSu.tmp_ent_subclass_metrics{suffix}
 )
 WHERE rn <= 3;
 
 -- ============ Step 3: 建位阶结果表 ============
-DROP TABLE IF EXISTS XiaoSu.enterprise_industry_rank;
+DROP TABLE IF EXISTS XiaoSu.enterprise_industry_rank{suffix};
 
-CREATE TABLE XiaoSu.enterprise_industry_rank
+CREATE TABLE XiaoSu.enterprise_industry_rank{suffix}
 (
     enterprise_name      String,
     scope                String,
@@ -71,10 +75,10 @@ CREATE TABLE XiaoSu.enterprise_industry_rank
 ENGINE = MergeTree()
 ORDER BY (scope, pct_composite);
 
--- ============ Step 4a: 中间表（企业 × 小类 × scope × 百分位，不含claims）============
-DROP TABLE IF EXISTS XiaoSu.tmp_ent_subclass_pct;
+-- ============ Step 4a: 中间表（企业 × 小类 × scope × 百分位）============
+DROP TABLE IF EXISTS XiaoSu.tmp_ent_subclass_pct{suffix};
 
-CREATE TABLE XiaoSu.tmp_ent_subclass_pct
+CREATE TABLE XiaoSu.tmp_ent_subclass_pct{suffix}
 (
     enterprise_name String,
     scope String,
@@ -87,31 +91,31 @@ CREATE TABLE XiaoSu.tmp_ent_subclass_pct
 ENGINE = MergeTree()
 ORDER BY enterprise_name;
 
-INSERT INTO XiaoSu.tmp_ent_subclass_pct
+INSERT INTO XiaoSu.tmp_ent_subclass_pct{suffix}
 SELECT
     t3.enterprise_name,
     q.scope,
     t3.subclass,
     t3.cnt,
     multiIf(
-        t3.cnt / eval.span_years > q.density_dist[99], 100,
-        arrayFirstIndex(x -> t3.cnt / eval.span_years <= x, q.density_dist) / 99 * 100
+        coalesce(t3.cnt / eval.span_years > q.density_dist[99], false), 100,
+        arrayFirstIndex(x -> coalesce(t3.cnt / eval.span_years, 0.0) <= x, q.density_dist) / 99 * 100
     ) AS pct_density,
     multiIf(
-        sub.avg_cited > q.cited_dist[99], 100,
-        arrayFirstIndex(x -> sub.avg_cited <= x, q.cited_dist) / 99 * 100
+        coalesce(sub.avg_cited > q.cited_dist[99], false), 100,
+        arrayFirstIndex(x -> coalesce(sub.avg_cited, 0.0) <= x, q.cited_dist) / 99 * 100
     ) AS pct_cited,
     multiIf(
-        sub.avg_family > q.family_dist[99], 100,
-        arrayFirstIndex(x -> sub.avg_family <= x, q.family_dist) / 99 * 100
+        coalesce(sub.avg_family > q.family_dist[99], false), 100,
+        arrayFirstIndex(x -> coalesce(sub.avg_family, 0.0) <= x, q.family_dist) / 99 * 100
     ) AS pct_family
-FROM XiaoSu.tmp_ent_top3_subclass AS t3
+FROM XiaoSu.tmp_ent_top3_subclass{suffix} AS t3
 INNER JOIN XiaoSu.industry_quantile q ON t3.subclass = q.ipc_subclass
-INNER JOIN XiaoSu.tmp_ent_subclass_metrics sub ON t3.enterprise_name = sub.enterprise_name AND t3.subclass = sub.subclass
-INNER JOIN XiaoSu.enterprise_eval_result eval ON t3.enterprise_name = eval.enterprise_name;
+INNER JOIN XiaoSu.tmp_ent_subclass_metrics{suffix} sub ON t3.enterprise_name = sub.enterprise_name AND t3.subclass = sub.subclass
+INNER JOIN XiaoSu.enterprise_eval_result{suffix} eval ON t3.enterprise_name = eval.enterprise_name;
 
 -- ============ Step 4b: 按企业、scope 聚合（加权平均）============
-INSERT INTO XiaoSu.enterprise_industry_rank
+INSERT INTO XiaoSu.enterprise_industry_rank{suffix}
 SELECT
     enterprise_name,
     scope,
@@ -142,7 +146,7 @@ FROM (
         sum(pct_cited * cnt) AS total_cited,
         sum(pct_family * cnt) AS total_family,
         sum(cnt) AS total_cnt
-    FROM XiaoSu.tmp_ent_subclass_pct
+    FROM XiaoSu.tmp_ent_subclass_pct{suffix}
     GROUP BY enterprise_name, scope
 ) agg
 ORDER BY enterprise_name, scope;
@@ -157,6 +161,6 @@ SELECT
     round(pct_family, 1) AS pct_family,
     round(pct_composite, 1) AS pct_composite,
     level
-FROM XiaoSu.enterprise_industry_rank
+FROM XiaoSu.enterprise_industry_rank{suffix}
 ORDER BY pct_composite DESC
 LIMIT 10;
