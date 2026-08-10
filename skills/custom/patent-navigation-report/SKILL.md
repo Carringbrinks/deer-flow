@@ -1,6 +1,6 @@
 ---
 name: patent-navigation-report
-description: 撰写专业级专利导航报告（Patent Navigation Report），面向特定行业与区域。本技能深度融合《专利导航指南》（GB/T 39551—2020）系列国家标准，采用**模块化架构**——从 `domain_knowledge/` 加载领域专属子模块，实现行业定制化分析。当用户请求撰写、生成、起草专利导航报告、专利景观分析、专利战略报告或政府/企业专利情报报告时触发。也适用于专利分析、技术专利布局、行业专利竞争情报、专利战略决策等场景。触发词：“专利导航”、“patent navigation”、“专利景观”、“patent landscape”，或任何要求分析专利数据以支持战略决策的请求。
+description: 撰写专业级专利导航报告（Patent Navigation Report），深度融合《专利导航指南》（GB/T 39551—2020）国家标准，采用模块化架构从 domain_knowledge/ 加载领域子模块。触发词：”专利导航”、”patent navigation”、”专利景观”、”patent landscape”，或任何以专利数据支撑战略决策的请求。
 ---
 
 # 专利导航报告 — 模块化框架
@@ -35,18 +35,20 @@ patent-navigation-report/
 │       └── report_outline.md
 ```
 
-## 渐进式加载协议
+## 子文件加载协议
 
-1.  **阅读本 SKILL.md** — 掌握融合了国标的核心工作流、专利导航模型与通用规范。
-2.  **加载领域模块** — 阅读 `domain_knowledge/{domain}/domain_knowledge.md` 获取行业背景、关键技术与核心竞合主体。
-3.  **加载领域方法论** — 阅读 `domain_knowledge/{domain}/methodology.md` 获取领域专属的产业链分解与分析框架。
-4.  **加载领域大纲** — 阅读 `domain_knowledge/{domain}/report_outline.md` 获取定制化的章节与重点内容布局,内容为空按照通用模板布局。
-5.  **按需加载**：
-    *   `template/report_template.md` — 通用模板，在没有特定领域大纲或者领域大纲文件为空时作为后备框架。
-    *   `methodology/general_methodology.md` — 通用方法论，用于补充领域专属方法论中未尽的通用分析范式。
-    *   `writing_style/guidelines.md` — 遵循决策支持导向的写作规范与表达要求。
-    *   `plotting/chart_specification.md` — 标准化图表绘制与配色方案。
-    *   `merge_md/merge_protocol.md` — 报告最终整合的合并协议（执行第3步时必须加载）。
+本技能的子文件在特定工作流步骤加载，不得提前或延后：
+
+| 子文件 | 加载时机 | 用途 |
+|--------|----------|------|
+| `domain_knowledge/{domain}/domain_knowledge.md` | 第1步 | 行业术语、IPC分类、核心企业与区域背景 |
+| `domain_knowledge/{domain}/methodology.md` | 第1步 | 领域专属产业链分解与分析框架 |
+| `domain_knowledge/{domain}/report_outline.md` | 第1步 | 定制化章节大纲（为空则降级到通用模板） |
+| `template/report_template.md` | 第1步（后备） | 领域大纲为空时作为章节结构后备 |
+| `writing_style/guidelines.md` | 步骤 A | 决策支持导向的写作规范、语体与论证模式 |
+| `methodology/general_methodology.md` | 步骤 A（参考） | 补充领域方法论中未尽的通用分析范式 |
+| `plotting/chart_specification.md` | 步骤 B | 图表配色、编号、标注标准与中文字体要求 |
+| `merge_md/merge_protocol.md` | 第3步 | 分类合并 → 中间汇总 → 最终交付的完整协议 |
 
 ## 可用领域模块
 
@@ -328,7 +330,7 @@ domain_knowledge/{domain_name}/report_outline.md
 
 ### 评估结果输出
 
-评估完成后，不通过的根据修改建议进行修改：
+评估完成后，不通过的根据修改建议进行修改
 
 ```markdown
 ## 格式规范检查
