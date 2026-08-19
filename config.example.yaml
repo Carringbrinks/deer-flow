@@ -1992,6 +1992,29 @@ memory:
     # prompts_dir: ""             # empty = bundled defaults
 
 # ============================================================================
+# RAG Search-Completion Middleware
+# ============================================================================
+# Calls an external search-completion service on each user turn and injects the
+# streamed answer (plus references) into the model context as hidden, untrusted
+# data. A retrieval failure fails open (the turn proceeds without RAG context).
+#
+# Request  (POST {base_url}/api/v1/searches/{search_id}/completions):
+#     Authorization: Bearer <api_key>
+#     {"question": "<latest user text>", "kb_ids": ["<optional dataset id>", ...]}
+# Response: an SSE stream of
+#     data: {"code": 0, "message": "", "data": {"answer": "...", "reference": {...}}}
+#   terminated by
+#     data: {"code": 0, "message": "", "data": true}
+rag:
+  enabled: false                 # set true to activate the RAG middleware
+  base_url: ""                   # e.g. http://rag-service:8080
+  search_id: ""                  # the search app id (path parameter)
+  # kb_ids: []                   # optional fallback dataset IDs sent in the body
+  # api_key: $RAG_API_KEY        # login token (sent as "Authorization: Bearer <token>"); define RAG_API_KEY in .env
+  timeout_seconds: 60.0
+  max_context_chars: 6000        # 0 = no truncation
+
+# ============================================================================
 # Custom Agent Management API
 # ============================================================================
 # Controls whether the HTTP gateway exposes custom-agent SOUL/USER.md management.

@@ -518,6 +518,15 @@ def build_middlewares(
 
     middlewares.append(DynamicContextMiddleware(agent_name=agent_name, app_config=resolved_app_config))
 
+    # Retrieve a search-completion answer (plus references) from the configured
+    # RAG service and inject it as hidden, untrusted data on each user turn.
+    # Placed right after dynamic context so retrieval is keyed to the sanitized,
+    # dated user turn.
+    if resolved_app_config.rag.enabled:
+        from deerflow.agents.middlewares.rag_middleware import RagMiddleware
+
+        middlewares.append(RagMiddleware(config=resolved_app_config.rag))
+
     # Deterministically load a full SKILL.md when the user starts the turn with
     # /skill-name. This keeps the base system prompt metadata-only while giving
     # explicit user activation priority over model-side relevance guessing.
