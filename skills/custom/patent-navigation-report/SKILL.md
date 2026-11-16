@@ -1,6 +1,6 @@
 ---
 name: patent-navigation-report
-description: 撰写专业级专利导航报告（Patent Navigation Report），深度融合《专利导航指南》（GB/T 39551—2020）国家标准，采用模块化架构从 domain_knowledge/ 加载领域子模块。触发词：”专利导航”、”patent navigation”、”专利景观”、”patent landscape”，或任何以专利数据支撑战略决策的请求。
+description: 撰写专业级专利导航报告（Patent Navigation Report），面向特定行业与区域。本技能深度融合《专利导航指南》（GB/T 39551—2020）系列国家标准，采用**模块化架构**从 `domain_knowledge/` 加载领域专属子模块，实现行业定制化分析。当用户请求撰写、生成、起草专利导航报告、专利景观分析、专利战略报告或政府/企业专利情报报告时触发。也适用于专利分析、技术专利布局、行业专利竞争情报、专利战略决策等场景。触发词：“专利导航”、“patent navigation”、“专利景观”、“patent landscape”，或任何要求分析专利数据以支持战略决策的请求。
 ---
 
 # 专利导航报告 — 模块化框架
@@ -22,6 +22,8 @@ patent-navigation-report/
 │   └── guidelines.md                 ← 语体、规范和论证模式
 ├── plotting/
 │   └── chart_specification.md        ← 图表类型、格式和配色方案
+├── references/
+│   └── search_strategy_template.md   ← 数据库来源与检索式单表模板
 ├── merge_md/
 │   └── merge_protocol.md             ← 合并协议与最终交付文件生成规范
 ├── domain_knowledge/
@@ -35,20 +37,19 @@ patent-navigation-report/
 │       └── report_outline.md
 ```
 
-## 子文件加载协议
+## 渐进式加载协议
 
-本技能的子文件在特定工作流步骤加载，不得提前或延后：
-
-| 子文件 | 加载时机 | 用途 |
-|--------|----------|------|
-| `domain_knowledge/{domain}/domain_knowledge.md` | 第1步 | 行业术语、IPC分类、核心企业与区域背景 |
-| `domain_knowledge/{domain}/methodology.md` | 第1步 | 领域专属产业链分解与分析框架 |
-| `domain_knowledge/{domain}/report_outline.md` | 第1步 | 定制化章节大纲（为空则降级到通用模板） |
-| `template/report_template.md` | 第1步（后备） | 领域大纲为空时作为章节结构后备 |
-| `writing_style/guidelines.md` | 步骤 A | 决策支持导向的写作规范、语体与论证模式 |
-| `methodology/general_methodology.md` | 步骤 A（参考） | 补充领域方法论中未尽的通用分析范式 |
-| `plotting/chart_specification.md` | 步骤 B | 图表配色、编号、标注标准与中文字体要求 |
-| `merge_md/merge_protocol.md` | 第3步 | 分类合并 → 中间汇总 → 最终交付的完整协议 |
+1.  **阅读本 SKILL.md** — 掌握融合了国标的核心工作流、专利导航模型与通用规范。
+2.  **加载领域模块** — 阅读 `domain_knowledge/{domain}/domain_knowledge.md` 获取行业背景、关键技术与核心竞合主体。
+3.  **加载领域方法论** — 阅读 `domain_knowledge/{domain}/methodology.md` 获取领域专属的产业链分解与分析框架。
+4.  **加载领域大纲** — 阅读 `domain_knowledge/{domain}/report_outline.md` 获取定制化的章节与重点内容布局,内容为空按照通用模板布局。
+5.  **开始检索前加载检索记录模板** — 阅读 `references/search_strategy_template.md`，将主要数据库/来源、检索用途和检索式写入同一个 Markdown 表格。
+6.  **按需加载**：
+    *   `template/report_template.md` — 通用模板，在没有特定领域大纲或者领域大纲文件为空时作为后备框架。
+    *   `methodology/general_methodology.md` — 通用方法论，用于补充领域专属方法论中未尽的通用分析范式。
+    *   `writing_style/guidelines.md` — 遵循决策支持导向的写作规范与表达要求。
+    *   `plotting/chart_specification.md` — 标准化图表绘制与配色方案。
+    *   `merge_md/merge_protocol.md` — 报告最终整合的合并协议（执行第3步时必须加载）。
 
 ## 可用领域模块
 
@@ -71,6 +72,8 @@ patent-navigation-report/
 *   **多层级透视**：严格遵循**全球 → 国家 → 区域 → 地方**的四级递进分析逻辑。
 *   **多维数据融合**：以专利数据为核心，深度融合产业、科技、经济、法律、政策等信息资源。
 *   **过程规范**：严格遵循“信息采集 → 数据处理 → 专利导航分析”的实施流程。
+*   **检索可复核**：每份报告用一份 `search_strategy.md` 保存检索记录，核心内容为一个 Markdown 表格；每行至少包含数据库/检索源、检索用途、检索式或筛选条件，可附带范围/时间和结果备注。
+*   **五类图默认生成**：产业链鱼骨图、产业区域分布图、重大项目分布图、重点企业（人才）分布图和产品品牌分布图是每篇专利导航报告的默认必备图，并优先于常规统计图完成。只有在检索后确认确实没有数据支撑时，才可省略对应图，不得因绘图麻烦或常规图表已足够而跳过。
 *   **逻辑严密**：遵循各类型专利导航的分析模型。例如，产业规划类遵循“方向—定位—路径”模型；区域规划类遵循“竞争力—匹配度”模型。
 *   **成果可用**：提供结论清晰、建议可操作的分析报告与数据集。
 
@@ -100,9 +103,11 @@ patent-navigation-report/
 4.  **细分领域**：需要深入剖析的具体技术分支。
 5.  **对标对象**：需重点分析的创新主体或人才团队。
 6.  **报告用途**：指导政策制定、嵌入企业管理、支撑研发或人才方案等。
-7.  **时间范围**：数据检索的历史时段。
+7.  **时间范围（分析窗口）**：数据检索的历史时段（如 `{TIME_RANGE_START}`–`{TIME_RANGE_END}` 或“近十年”）。这是分析覆盖的年份跨度，**不是**数据截止日期。
 8.  **报告篇幅**：综合型（~25万字）还是聚焦型（~15-20万字）。
-9.  **其他特殊要求**（可选）：用户对报告格式、侧重点、输出方式等的额外说明。
+9.  **数据截止日期**（系统或需求文档给出）：统计/检索数据新鲜度时点。优先采用需求文档明确指定的「数据截止日期」；未指定时使用上下文 `<current_date>`（生成当日）。与第 7 条「时间范围」严格区分，不得用分析窗口终点、固定年中日或规范中的静态年份示例冒充截止日。
+10. **其他特殊要求**（可选）：用户对报告格式、侧重点、输出方式等的额外说明。
+11. **五类图要求**（默认必备）：产业链鱼骨图、产业区域分布图、重大项目分布图、重点企业（人才）分布图和产品品牌分布图默认全部生成；仅某一类图确实没有数据支撑时，才可省略该类图。
 
 **⚠️ 重要判断逻辑：**
 - **如果用户已上传或提供了需求文档（.md）**：直接解析文档内容，提取上述各项需求信息，进入第1步。无需再次向用户逐项确认。
@@ -120,29 +125,53 @@ domain_knowledge/{domain_name}/methodology.md
 domain_knowledge/{domain_name}/report_outline.md
 ```
 
+### 第1.5步：建立检索表格并规划五类图
+
+在逐章写作前完成主要检索，避免各章重复检索和口径漂移。
+
+#### 1.5.1 创建构建目录
+
+```
+/mnt/user-data/workspace/patent_navigation/
+├── parts/                      ← 逐章生成产物
+├── assets/
+│   ├── charts/                 ← 图表图片文件（PNG / SVG）
+│   └── data/                   ← 检索结果与绘图原始数据（CSV / JSON）
+├── merged/                     ← 合并中间产物
+└── final/
+    └── search_strategy.md      ← 唯一的检索记录文件，正文为一个表格
+```
+
+**⚠️ 路径强制约定**：过程和资产路径统一使用 `/mnt/user-data/workspace/patent_navigation/` 绝对路径；正文图片链接统一指向 `/mnt/user-data/workspace/patent_navigation/assets/charts/`。`/mnt/user-data/outputs/` 仅在最终阶段接收交付文件，不得放入过程目录。
+
+#### 1.5.2 用单个表格保存检索记录
+
+1. 读取 `references/search_strategy_template.md`，建立 `/mnt/user-data/workspace/patent_navigation/final/search_strategy.md`。
+2. 每行记录一个数据库、一个检索主题或一项辅助数据检索。
+3. 表格建议列为：序号、数据类型、数据库/检索源、检索主题/用途、检索式或筛选条件、范围/时间、结果/备注。可根据实际来源增减附加信息。
+4. 专利检索式保留数据库实际执行的原文；检索结果无法取得时，相应数量写“—”。辅助项目、企业、人才、品牌和区域数据也可在同一表格中列行。
+5. 不需要为每条检索另写验证章节或复核章节；必要说明放在“备注”列。
+6. 不得记录账号、密码、API 密钥或 Cookie。第三章可概括检索思路，并引用该表格文件。
+
+#### 1.5.3 规划五类默认必备图
+
+下列五类图默认全部生成，并优先于趋势图、排名图、网络图等常规图表。只有在完成检索后确认某类图确实没有数据支撑时，才可省略该类图；不得以报告类型不匹配、绘图工作量大或已有其他图表为由省略。
+
+| 默认必备图 | 最低数据要求 | 典型用途 |
+|---|---|---|
+| 产业链鱼骨图 | 上中下游节点，以及与节点相关的技术、产品、主体或项目关系 | 识别强链、弱链、断链和创新卡点 |
+| 产业区域分布图 | 可归集到国家、省或市的专利、企业、产业或创新资源数据 | 判断创新与产业空间集聚 |
+| 重大项目分布图 | 项目名称、区域，以及投资、状态、时间或技术方向中的可用信息 | 判断项目布局与产业链匹配度 |
+| 重点企业（人才）分布图 | 企业、机构或公开人才及其区域/来源信息 | 判断主体集聚、人才供给与协同生态 |
+| 产品品牌分布图 | 产品类别，以及与品牌、企业、技术或应用的对应关系 | 判断产品赛道、品牌和专利支撑 |
+
+若检索结果确有数据，必须绘制对应图。若某类图确实没有数据支撑，可在检索表的“结果/备注”列简述原因，不得虚构坐标、主体、品牌关系或项目数据。
+
 ### 第2步：增量生成正文（先正文，后摘要）
 
-**核心原则：逐章生成正文 → 生成本章图表 → 提取本章参考文献 → 生成本章摘要。严禁跨越步骤。**
+**核心原则：建立检索表格与五类必备图清单 → 逐章生成正文 → 优先生成五类图及本章其他图表 → 提取本章参考文献 → 生成本章摘要。严禁跨越章节步骤。**
 
----
-
-### 2.1 创建输出目录结构
-
-首先在 `/mnt/user-data/` 下创建以下目录结构：
-
-```
-/mnt/user-data/outputs/
-├── parts/                      ← 存放所有中间过程文件（逐章生成产物）
-├── assets/                     ← 图表与数据资源
-│   ├── charts/                 ← 图表图片文件（PNG / SVG）
-│   └── data/                   ← 绘图原始数据（CSV / JSON）
-├── merged/                     ← 中间合并结果（强制生成）
-└── final/                      ← 最终交付文件夹（仅存最终成果）
-```
-
-**⚠️ 路径强制约定：本技能中所有文件保存路径和图片引用路径必须使用以 `/mnt/user-data/outputs/` 开头的绝对路径。严禁使用相对路径（如 `outputs/...` 或 `assets/...`），也不得使用不含 `/mnt/user-data/` 前缀的路径。正文中图表占位符的 `src` 属性同样必须为以 `/mnt/user-data/outputs/assets/` 开头的绝对路径。**
-
-### 2.2 章节生成标准化循环（A-B-C-D 流程）
+### 2.1 章节生成标准化循环（A-B-C-D 流程）
 
 对于第1章至最后一章，每一章的生成必须严格遵循以下四个连续步骤：
 
@@ -156,30 +185,32 @@ domain_knowledge/{domain_name}/report_outline.md
     *   **严禁**跳级使用标题（如从 `# ` 直接跳到 `### `，中间跳过 `## `）。
     *   *正确示例：`# 第三章 数据来源与研究方法` → `## 3.1 专利数据来源` → `### 3.1.1 检索数据库`*
     *   *错误示例：`## 第三章 数据来源与研究方法`（章节标题从二级开始，禁止）*
-*   **图表占位**：在正文中需要插入图表的位置，直接生成标准化的 Markdown 图片语法。路径必须使用以 `/mnt/user-data/outputs/assets/charts/` 开头的**绝对路径**。严禁使用相对路径（如 `assets/charts/xxx.png`）或缺少 `/mnt/user-data/` 前缀的路径。
-    *   *正确示例：`![图3-1 全球碳纤维专利申请量趋势](/mnt/user-data/outputs/assets/charts/fig_3_1_patent_trend.png)`*
+*   **五类图占位**：除非检索确认该类图没有数据支撑，本章必须为产业链、区域、项目、企业/人才和产品品牌分布图放置对应图片占位符。
+*   **图表占位**：在正文中需要插入图表的位置，直接生成标准化的 Markdown 图片语法。路径必须使用以 `/mnt/user-data/workspace/patent_navigation/assets/charts/` 开头的**绝对路径**。严禁使用相对路径（如 `assets/charts/xxx.png`）或缺少 `/mnt/user-data/` 前缀的路径。
+    *   *正确示例：`![图3-1 全球碳纤维专利申请量趋势](/mnt/user-data/workspace/patent_navigation/assets/charts/fig_3_1_patent_trend.png)`*
     *   *错误示例：`![图3-1 全球碳纤维专利申请量趋势](outputs/assets/charts/fig_3_1_patent_trend.png)`（相对路径，禁止）*
 *   **文献内联**：引用文献时直接在正文中打上标记 `[citation:文献名称](URL)`。
-*   **保存文件**：将生成的正文以绝对路径保存，文件命名格式为 `part_XX_chapterXX.md`（例如：`/mnt/user-data/outputs/parts/part_01_chapter01.md`）。
+*   **保存文件**：将生成的正文以绝对路径保存，文件命名格式为 `part_XX_chapterXX.md`（例如：`/mnt/user-data/workspace/patent_navigation/parts/part_01_chapter01.md`）。
 
 #### **步骤 B：生成本章配套图表（正文完成后立即执行，强制不可跳过）**
 
 ⚠️ **本步骤为强制步骤，严禁跳过。未完成本步骤前，不得进入步骤 C。**
 
+*   **B0. 五类图优先**：先完成产业链鱼骨图、产业区域分布图、重大项目分布图、重点企业（人才）分布图和产品品牌分布图；只有检索确认某类图无数据支撑时才可省略，之后生成常规分析图。
 *   **B1. 占位符提取**：扫描刚刚生成的正文 Markdown 文件（`part_XX_chapterXX.md`），提取所有 `![图X-X...](...)` 和 `![表X-X...](...)` 占位符。将提取到的占位符整理成清单，明确每个图表的编号（如 `图1-1`、`表2-3`）和目标文件路径。
-*   **B2. 占位符校验**：逐一校验提取到的占位符中的图片路径是否为以 `/mnt/user-data/outputs/assets/charts/` 开头的**绝对路径**。如发现相对路径或缺少前缀，立即修正正文文件中的路径。
-*   **B3. 数据准备**：为清单中的每一个图表准备绘图原始数据。数据必须来源于真实的专利检索结果或分析计算，严禁凭空编造。原始数据必须以**绝对路径**保存：
-    *   CSV 格式保存至 `/mnt/user-data/outputs/assets/data/data_X_X_name.csv`
-    *   JSON 格式保存至 `/mnt/user-data/outputs/assets/data/data_X_X_name.json`
+*   **B2. 占位符校验**：逐一校验提取到的占位符中的图片路径是否为以 `/mnt/user-data/workspace/patent_navigation/assets/charts/` 开头的**绝对路径**。如发现相对路径或缺少前缀，立即修正正文文件中的路径。
+*   **B3. 数据准备**：为清单中的每一个图表准备绘图原始数据。数据必须来源于真实的专利检索结果、可追溯的产业/项目/企业/人才/品牌资料或分析计算，严禁凭空编造。原始数据必须以**绝对路径**保存：
+    *   CSV 格式保存至 `/mnt/user-data/workspace/patent_navigation/assets/data/data_X_X_name.csv`
+    *   JSON 格式保存至 `/mnt/user-data/workspace/patent_navigation/assets/data/data_X_X_name.json`
 *   **B4. 图表逐一生成（逐个执行，不得批量跳过）**：
     *   对清单中的**每一个**图表占位符，依次执行以下操作：
         1. 读取对应的原始数据文件（CSV/JSON）。
         2. 根据 `plotting/chart_specification.md` 确定图表类型、配色方案和格式标准。
         3. 使用 Python（matplotlib/seaborn）或等效图表生成工具，编写并执行绘图脚本。
-        4. 将生成的图片文件保存至正文占位符中指定的精确路径（即 `/mnt/user-data/outputs/assets/charts/fig_X_X_name.png`）。
+        4. 将生成的图片文件保存至正文占位符中指定的精确路径（即 `/mnt/user-data/workspace/patent_navigation/assets/charts/fig_X_X_name.png`）。
     *   **⚠️ 严禁以下行为**：
         *   只生成部分图表而跳过其余。
-        *   以"数据不足"、"图表类型不支持"等为由跳过图表生成——应使用可用数据尽力生成。
+        *   已有数据却以“数据不足”或“图表类型不支持”为由跳过图表生成。
         *   生成占位图片、空白图片或纯文本占位文件替代真实图表。
 *   **B5. 图表存在性验证（阻断性检查）**：
     *   逐一检查清单中每个图表对应的目标文件是否已在磁盘上创建成功。
@@ -196,7 +227,7 @@ domain_knowledge/{domain_name}/report_outline.md
     *   **严禁包含任何分组标题**（如 "中文文献"、"英文文献"、"专利文献" 等）。
     *   **严禁包含任何说明性文字**（如 "以下为本章参考文献"、"数据来源" 等脚注）。
     *   文件内容必须可以直接拼接，无需任何预处理即可合并。
-*   **独立保存**：将该列表以绝对路径保存，文件命名格式为 `part_XX_chapterXX_refs.md`（例如：`/mnt/user-data/outputs/parts/part_01_chapter01_refs.md`）。
+*   **独立保存**：将该列表以绝对路径保存，文件命名格式为 `part_XX_chapterXX_refs.md`（例如：`/mnt/user-data/workspace/patent_navigation/parts/part_01_chapter01_refs.md`）。
 
 #### **步骤 D：生成并保存本章摘要**
 
@@ -210,9 +241,9 @@ domain_knowledge/{domain_name}/report_outline.md
     * ⚠️ **禁止包含图片语法**：不得包含任何 `![...](...)` Markdown 图片语法。
     * ⚠️ **禁止包含引用标记**：不得包含 `[citation:...]` 标记。
     * 严禁凭空编造摘要数据，必须与正文内容完全锚定。
-*   **保存路径**：将生成的摘要以绝对路径保存，文件命名格式为 `part_XX_chapterXX_abstract.md`（例如：`/mnt/user-data/outputs/parts/part_01_chapter01_abstract.md`）。
+*   **保存路径**：将生成的摘要以绝对路径保存，文件命名格式为 `part_XX_chapterXX_abstract.md`（例如：`/mnt/user-data/workspace/patent_navigation/parts/part_01_chapter01_abstract.md`）。
 
-#### 2.3 逐章生成正文（第1章至最后章）
+#### 2.2 逐章生成正文（第1章至最后章）
 
 **每次只生成一章**，不得跨章混合生成。
 
@@ -220,8 +251,9 @@ domain_knowledge/{domain_name}/report_outline.md
 
 通用生成要求：
 - 每章正文不少于15,000字，核心分析章建议20,000-25,000字
-- 各章正文、参考文献、摘要三份文件均以**绝对路径**独立保存至 `/mnt/user-data/outputs/parts/`，命名格式为 `part_XX_chapterXX.md`、`part_XX_chapterXX_refs.md`、`part_XX_chapterXX_abstract.md`
-- 正文中所有图片引用、数据文件引用必须使用以 `/mnt/user-data/outputs/assets/` 开头的绝对路径
+- 各章正文、参考文献、摘要三份文件均以**绝对路径**独立保存至 `/mnt/user-data/workspace/patent_navigation/parts/`，命名格式为 `part_XX_chapterXX.md`、`part_XX_chapterXX_refs.md`、`part_XX_chapterXX_abstract.md`
+- 正文中所有图片引用、数据文件引用必须使用以 `/mnt/user-data/workspace/patent_navigation/assets/` 开头的绝对路径
+- 五类默认必备图均须生成并验证；只有该类图确实没有数据支撑时才可省略
 - **标题层级**：每章正文必须以 `# 第X章 XXX`（一级标题）开头，节用 `## X.Y`（二级标题），子节用 `### X.Y.Z`（三级标题）。严禁章节标题从 `## ` 开始。
 
 
@@ -235,20 +267,37 @@ domain_knowledge/{domain_name}/report_outline.md
 
 合并协议负责规定：
 - 输入文件结构与命名规范
-- 中间文件的生成规则（`/mnt/user-data/outputs/merged/`）
-- 最终交付文件的生成规则（`/mnt/user-data/outputs/final/`）
+- 中间文件的生成规则（`/mnt/user-data/workspace/patent_navigation/merged/`）
+- 最终文件与检索记录文件的生成规则（`/mnt/user-data/workspace/patent_navigation/final/`）
 - 参考文献去重、重编号与最终报告拼接顺序
 - Word 文档转换参考命令
 
-执行合并前必须确认 `/mnt/user-data/outputs/parts/`、`/mnt/user-data/outputs/assets/`、`/mnt/user-data/outputs/merged/`、`/mnt/user-data/outputs/final/` 已按协议创建；执行合并后必须进入”评估”阶段检查输出格式是否合规。
+执行合并前必须确认 `/mnt/user-data/workspace/patent_navigation/parts/`、`assets/`、`merged/`、`final/` 已按协议创建，且 `final/search_strategy.md` 已用表格记录主要检索来源与检索式；执行合并后将 `report.md`、`abstract.md`、`refs.md`、`search_strategy.md` 和可选的 `report.docx` 复制到 `/mnt/user-data/outputs/`，再进入“评估”阶段检查输出格式是否合规。
 
 
 ## 特殊注意事项
 
+### 五类默认必备图约定
+- 五类布局图默认全部生成，并排在常规统计图之前完成。
+- 只有检索确认某类图确实没有数据支撑时才可省略；可用数据存在时不得跳过。
+- 五类图应使用真实、可追溯数据；地图缺少精确坐标时使用行政区域聚合或示意分布，不得编造点位。
+- 五类图应在相关正文附近解释其结构或空间含义，不要只重复图例或排名。
+- 某类图确实无数据时可不生成，并在检索表的“结果/备注”列简要说明。
+
+### 检索记录约定
+- `search_strategy.md` 用一个 Markdown 表格保存主要检索记录。
+- 每行至少列出数据库/检索源、检索用途和检索式或筛选条件；范围、时间、结果和备注有则填写，没有则写“—”。
+- 不需要拆分检索式明细章节、验证章节或复核章节。
+- 最终交付包含 `search_strategy.md`，其内容不得含账号、密码、密钥、Cookie 或其他敏感凭据。
+
 ### 专利专属约定
 - 使用**专利族**（非单个专利）作为计数单位
 - 始终明确统计的是申请还是授权
-- 显著标注数据截止时间
+- **显著标注数据截止时间**，且必须遵守：
+  - 全文（正文、图注、JSON `data_cutoff`、第三章「检索截止/数据截止」）统一为同一天
+  - 取值优先级：需求文档「数据截止日期」→ `<current_date>`（生成当日）
+  - 「时间范围」只描述分析窗口；「数据截止」描述数据新鲜度；二者不得混用
+  - 各章截止日必须一致；不得照抄规范、模板或历史报告中的静态日期示例
 - 区分申请日与公开日分析
 
 ### 地理递进分析
@@ -277,10 +326,10 @@ domain_knowledge/{domain_name}/report_outline.md
 
 ### 输出范式（强制）
 
-所有路径必须以 `/mnt/user-data/` 为根。以下目录树中的 `outputs/` 均指 `/mnt/user-data/outputs/`：
+所有路径必须以 `/mnt/user-data/` 为根。过程资产位于构建目录，交付目录只保留最终文件：
 
 ```
-/mnt/user-data/outputs/
+/mnt/user-data/workspace/patent_navigation/
 ├── parts/                      ← 存放所有中间过程文件（逐章生成产物）
 │   ├── part_01_chapter01.md
 │   ├── part_01_chapter01_refs.md
@@ -309,28 +358,40 @@ domain_knowledge/{domain_name}/report_outline.md
 │   ├── body.md                 ← 所有章节正文合并结果
 │   └── references.md           ← 去重+重编号后的参考文献全集
 │
-└── final/                      ← 最终交付文件夹（仅存最终成果）
+└── final/                      ← 最终文件暂存区
     ├── report.md               ← 最终整合报告（摘要 + 正文 + 参考文献）
     ├── abstract.md             ← 最终润色后的全文摘要（可基于 merged/abstracts.md 再优化）
-    └── refs.md                 ← 最终参考文献（来自 merged/references.md）
+    ├── refs.md                 ← 最终参考文献（来自 merged/references.md）
+    ├── search_strategy.md      ← 唯一检索记录文件（Markdown 表格：来源、检索式、范围与备注）
+    └── report.docx             ← 可选（pandoc 可用时）
+
+/mnt/user-data/outputs/         ← 最终交付目录
+├── report.md
+├── abstract.md
+├── refs.md
+├── search_strategy.md
+└── report.docx                 ← 可选
 ```
 
 ### 格式检查清单
 
-- `/mnt/user-data/outputs/parts/` 中每个章节必须同时存在正文、参考文献、摘要三个文件：`part_XX_chapterXX.md`、`part_XX_chapterXX_refs.md`、`part_XX_chapterXX_abstract.md`。
+- `/mnt/user-data/workspace/patent_navigation/parts/` 中每个章节必须同时存在正文、参考文献、摘要三个文件：`part_XX_chapterXX.md`、`part_XX_chapterXX_refs.md`、`part_XX_chapterXX_abstract.md`。
 - 章节编号必须连续且按两位数字命名，例如 `part_01`、`chapter01`。
-- `/mnt/user-data/outputs/assets/charts/` 仅存放图表图片文件，文件名应符合 `fig_X_X_name.png` 或 `fig_X_X_name.svg`。
-- `/mnt/user-data/outputs/assets/data/` 仅存放图表原始数据，文件名应符合 `data_X_X_name.csv` 或 `data_X_X_name.json`。
-- `/mnt/user-data/outputs/merged/` 必须包含且只包含合并中间产物：`abstracts.md`、`body.md`、`references.md`。
-- `/mnt/user-data/outputs/final/` 必须包含最终交付文件：`report.md`。
-- `/mnt/user-data/outputs/final/report.md` 必须按”摘要 → 正文 → 参考文献”的顺序组织，且不得包含临时说明、检查记录或过程性文本。
-- 所有路径必须统一使用 `/mnt/user-data/outputs/` 绝对路径；正文中的图表链接必须指向 `/mnt/user-data/outputs/assets/charts/`。严禁出现相对路径（如 `outputs/`、`assets/`、`../` 等）。
-- **标题层级检查**：`/mnt/user-data/outputs/final/report.md` 中"摘要"、"第X章"各章节、"参考文献"必须全部使用 `# `（一级标题）；各章节内节标题必须为 `## `（二级标题），子节标题必须为 `### `（三级标题）。严禁任何章节标题从 `## ` 开始。
-- **图表文件存在性检查**：扫描 `/mnt/user-data/outputs/final/report.md` 中所有 `![...](/mnt/user-data/outputs/assets/charts/...)` 引用，逐一确认每个引用的图片文件在磁盘上实际存在且文件大小 > 0。对于每个缺失或为空的图表文件，记录路径并标注为不合规项。
+- `/mnt/user-data/workspace/patent_navigation/assets/charts/` 仅存放图表图片文件，文件名应符合 `fig_X_X_name.png` 或 `fig_X_X_name.svg`。
+- `/mnt/user-data/workspace/patent_navigation/assets/data/` 仅存放检索结果与图表原始数据，文件名应符合 `data_X_X_name.csv` 或 `data_X_X_name.json`。
+- `/mnt/user-data/workspace/patent_navigation/merged/` 必须包含且只包含合并中间产物：`abstracts.md`、`body.md`、`references.md`。
+- `/mnt/user-data/workspace/patent_navigation/final/` 必须包含 `report.md`、`abstract.md`、`refs.md`、`search_strategy.md`，以及可选的 `report.docx`。
+- `/mnt/user-data/workspace/patent_navigation/final/report.md` 必须按“摘要 → 正文 → 参考文献”的顺序组织，且不得包含临时说明、检查记录或过程性文本。
+- `/mnt/user-data/outputs/` 仅包含 `report.md`、`abstract.md`、`refs.md`、`search_strategy.md` 和可选的 `report.docx`。
+- 正文中的图表链接必须指向 `/mnt/user-data/workspace/patent_navigation/assets/charts/`。严禁出现相对路径（如 `outputs/`、`assets/`、`../` 等）。
+- **标题层级检查**：最终 `report.md` 中“摘要”、“第X章”各章节、“参考文献”必须全部使用 `# `（一级标题）；各章节内节标题必须为 `## `（二级标题），子节标题必须为 `### `（三级标题）。严禁任何章节标题从 `## ` 开始。
+- **五类必备图检查**：报告默认必须包含产业链鱼骨图、产业区域分布图、重大项目分布图、重点企业（人才）分布图和产品品牌分布图。任一类缺失时，核查是否有明确的“无数据支撑”记录；有可用数据而缺失的，判定为不合规。
+- **图表文件存在性检查**：扫描 `final/report.md` 中所有图片引用，逐一确认目标文件在磁盘上实际存在且文件大小 > 0。对于每个缺失或为空的图表文件，记录路径并标注为不合规项。
+- **检索记录检查**：`search_strategy.md` 应有一个 Markdown 表格，逐行包含数据库/检索源、检索用途、检索式或筛选条件；其他字段可写“—”。不得出现未替换的模板说明、敏感凭据或与正文不一致的数据截止日期。
 
 ### 评估结果输出
 
-评估完成后，不通过的根据修改建议进行修改
+评估完成后，不通过的根据修改建议进行修改：
 
 ```markdown
 ## 格式规范检查
